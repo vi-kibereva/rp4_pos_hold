@@ -1,18 +1,28 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+# POSIX sh build script (no bashisms)
+set -eu
+# Try to enable pipefail when available (bash/dash); ignore if not
+(set -o pipefail) 2>/dev/null || true
 
 # ---- defaults ----
-BUILD_TYPE="${BUILD_TYPE:-Release}" # or Debug
-BUILD_DIR="${BUILD_DIR:-build}"
-TARGET="${TARGET:-main_gr}"
-JOBS="${JOBS:-$(
-  (command -v sysctl >/dev/null && sysctl -n hw.ncpu) ||
-    (command -v nproc >/dev/null && nproc) ||
+: "${BUILD_TYPE:=Release}" # or Debug
+: "${BUILD_DIR:=build}"
+: "${TARGET:=main_gr}"
+
+detect_jobs() {
+  if command -v sysctl >/dev/null 2>&1; then
+    sysctl -n hw.ncpu 2>/dev/null || echo 4
+  elif command -v nproc >/dev/null 2>&1; then
+    nproc 2>/dev/null || echo 4
+  else
     echo 4
-)}"
-GEN_COMPILE_COMMANDS="${GEN_COMPILE_COMMANDS:-1}" # 1 = symlink compile_commands.json to repo root
-TOOLCHAIN_FILE="${TOOLCHAIN_FILE:-}"              # e.g., toolchains/rpi.cmake
-EXTRA_CMAKE_FLAGS=()                              # keep as array
+  fi
+}
+: "${JOBS:=$(detect_jobs)}"
+
+: "${GEN_COMPILE_COMMANDS:=1}" # 1 = symlink compile_commands.json to repo root
+: "${TOOLCHAIN_FILE:=}"        # e.g., toolchains/rpi.cmake
+EXTRA_CMAKE_FLAGS=""           # space-separated string
 
 usage() {
   cat <<'EOF'
@@ -38,7 +48,7 @@ ASAN=0
 UBSAN=0
 
 # ---- parse args ----
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
   case "$1" in
   -d | --debug)
     BUILD_TYPE="Debug"
@@ -49,7 +59,7 @@ while [[ $# -gt 0 ]]; do
     shift
     ;;
   -b | --build-dir)
-    [[ $# -ge 2 ]] || {
+    [ $# -ge 2 ] || {
       echo "Missing arg for $1"
       exit 1
     }
@@ -57,7 +67,7 @@ while [[ $# -gt 0 ]]; do
     shift 2
     ;;
   -t | --target)
-    [[ $# -ge 2 ]] || {
+    [ $# -ge 2 ] || {
       echo "Missing arg for $1"
       exit 1
     }
@@ -65,7 +75,7 @@ while [[ $# -gt 0 ]]; do
     shift 2
     ;;
   -j | --jobs)
-    [[ $# -ge 2 ]] || {
+    [ $# -ge 2 ] || {
       echo "Missing arg for $1"
       exit 1
     }
@@ -85,7 +95,7 @@ while [[ $# -gt 0 ]]; do
     shift
     ;;
   --toolchain)
-    [[ $# -ge 2 ]] || {
+    [ $# -ge 2 ] || {
       echo "Missing arg for $1"
       exit 1
     }
@@ -93,11 +103,12 @@ while [[ $# -gt 0 ]]; do
     shift 2
     ;;
   --flag)
-    [[ $# -ge 2 ]] || {
+    [ $# -ge 2 ] || {
       echo "Missing arg for $1"
       exit 1
     }
-    EXTRA_CMAKE_FLAGS+=("$2")
+    # Append as-is; quote the whole EXTRA_CMAKE_FLAGS when expanding
+    EXTRA_CMAKE_FLAGS="${EXTRA_CMAKE_FLAGS} $2"
     shift 2
     ;;
   -h | --help)
@@ -113,7 +124,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ---- prepare build dir ----
-if [[ "$CLEAN" -eq 1 && -d "$BUILD_DIR" ]]; then
+if [ "$CLEAN" -eq 1 ] && [ -d "$BUILD_DIR" ]; then
   echo "[clean] removing $BUILD_DIR"
   rm -rf "$BUILD_DIR"
 fi
@@ -121,31 +132,29 @@ mkdir -p "$BUILD_DIR"
 
 # ---- sanitizer flags (clang/gcc) ----
 SAN_FLAGS=""
-[[ "$ASAN" -eq 1 ]] && SAN_FLAGS+=" -fsanitize=address"
-[[ "$UBSAN" -eq 1 ]] && SAN_FLAGS+=" -fsanitize=undefined"
-if [[ -n "$SAN_FLAGS" ]]; then
-  EXTRA_CMAKE_FLAGS+=("-DCMAKE_CXX_FLAGS=${SAN_FLAGS} -fno-omit-frame-pointer")
+[ "$ASAN" -eq 1 ] && SAN_FLAGS="${SAN_FLAGS} -fsanitize=address"
+[ "$UBSAN" -eq 1 ] && SAN_FLAGS="${SAN_FLAGS} -fsanitize=undefined"
+if [ -n "$SAN_FLAGS" ]; then
+  EXTRA_CMAKE_FLAGS="${EXTRA_CMAKE_FLAGS} -DCMAKE_CXX_FLAGS=${SAN_FLAGS} -fno-omit-frame-pointer"
 fi
 
 # ---- toolchain ----
-[[ -n "$TOOLCHAIN_FILE" ]] && EXTRA_CMAKE_FLAGS+=("-DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE}")
+if [ -n "$TOOLCHAIN_FILE" ]; then
+  EXTRA_CMAKE_FLAGS="${EXTRA_CMAKE_FLAGS} -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE}"
+fi
 
 echo "[configure] type=${BUILD_TYPE} dir=${BUILD_DIR}"
-# Guard empty-array expansion for Bash 3.2 + set -u
-if ((${#EXTRA_CMAKE_FLAGS[@]})); then
-  cmake -S . -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    "${EXTRA_CMAKE_FLAGS[@]}"
-else
-  cmake -S . -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-fi
+# Expand extra flags in a single quoted string to avoid word-splitting bugs
+# shellcheck disable=SC2086
+cmake -S . -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
+  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+  $EXTRA_CMAKE_FLAGS
 
 echo "[build] target=${TARGET} jobs=${JOBS}"
 cmake --build "$BUILD_DIR" --target "$TARGET" -j "$JOBS"
 
 # ---- compile_commands.json symlink for clangd ----
-if [[ "$GEN_COMPILE_COMMANDS" -eq 1 && -f "$BUILD_DIR/compile_commands.json" ]]; then
+if [ "$GEN_COMPILE_COMMANDS" -eq 1 ] && [ -f "$BUILD_DIR/compile_commands.json" ]; then
   ln -sf "$BUILD_DIR/compile_commands.json" compile_commands.json
 fi
 
