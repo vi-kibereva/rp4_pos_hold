@@ -316,8 +316,8 @@ int main(int argc, char **argv) {
     std::printf("MSP protocol: %u, API: %u.%u\n", mspProtocol, apiMajor,
                 apiMinor);
 
-    // --- Example 2: MSP_ATTITUDE (legacy 0x64) ---
-    constexpr uint8_t MSP_ATTITUDE = 0x64;
+    // --- Example 2: MSP_ATTITUDE ---
+    constexpr uint8_t MSP_ATTITUDE = 109;
     if (!msp::send_v1(s.fd, MSP_ATTITUDE, nullptr, 0)) {
       std::fprintf(stderr, "write MSP_ATTITUDE failed\n");
       return 1;
