@@ -69,25 +69,25 @@ public:
   void send(CommandType command_type, std::uint8_t command_id,
             const void *payload, std::uint8_t size);
 
-  bool recv(std::uint8_t *command_id, void *payload, std::uint8_t maxSize,
-            std::uint8_t *recvSize);
+  bool recv(std::uint8_t *command_id, void *payload, std::uint8_t max_size,
+            std::uint8_t *recv_size);
 
-  bool waitFor(std::uint8_t command_id, void *payload, std::uint8_t maxSize,
-               std::uint8_t *recvSize = nullptr);
+  bool waitFor(std::uint8_t command_id, void *payload, std::uint8_t max_size,
+               std::uint8_t *recv_size = nullptr);
 
-  bool request(std::uint8_t command_id, void *payload, std::uint8_t maxSize,
-               std::uint8_t *recvSize = nullptr);
+  bool request(std::uint8_t command_id, void *payload, std::uint8_t max_size,
+               std::uint8_t *recv_size = nullptr);
 
   bool command(std::uint8_t command_id, void *payload, std::uint8_t size,
-               bool waitACK = true);
+               bool wait_ACK = true);
 
-  size_t reset();
-  bool getActiveModes(std::uint32_t *activeModes);
+  void reset();
+  bool getActiveModes(std::uint32_t *active_modes);
 
 private:
   SerialStream stream_;
-    cc_t timeout_;
-    uint8_t * buffer_;
+  cc_t timeout_;
+  uint8_t *buffer_;
 };
 
 } // namespace msp
