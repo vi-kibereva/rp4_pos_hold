@@ -109,8 +109,6 @@ public:
    * Behavior:
    * - Queries the kernel RX queue via ::ioctl(FIONREAD) and returns the byte
    * count.
-   * - The value may change before a subsequent read; use poll/select for
-   * readiness.
    *
    * @return Bytes available to read immediately (0 if none).
    * @throws std::system_error if ::ioctl(FIONREAD, ...) fails (preserves
