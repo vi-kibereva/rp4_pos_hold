@@ -86,8 +86,6 @@ public:
 
 private:
   SerialStream stream_;
-  cc_t timeout_;
-  uint8_t *buffer_;
 };
 
 } // namespace msp
