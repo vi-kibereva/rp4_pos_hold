@@ -3,7 +3,8 @@
 #include <cstring>
 
 #include <fcntl.h>
-#include <sys/_types/_ssize_t.h>
+#include <sys/filio.h>
+#include <sys/ioctl.h>
 #include <sys/termios.h>
 #include <termios.h>
 #include <unistd.h>
@@ -129,8 +130,16 @@ size_t SerialStream::write(uint8_t *data, size_t size) {
 }
 
 void SerialStream::flush() {
-  if (::tcdrain(serial_fd_) != -1)
+  if (::tcdrain(serial_fd_) != 0)
     utils::throw_errno("tcdrain failed");
+}
+
+size_t SerialStream::available() {
+  int n;
+  if (::ioctl(serial_fd_, FIONREAD, &n) != 0)
+    utils::throw_errno("Error getting available bytes for read with ioctl");
+
+  return static_cast<size_t>(n);
 }
 
 } // namespace msp

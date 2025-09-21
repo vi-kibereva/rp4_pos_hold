@@ -104,8 +104,19 @@ public:
    */
   void flush();
 
-  // TODO: implement this method
-  uint8_t avaliable();
+  /**
+   * @brief Return the number of bytes currently readable without blocking.
+   * Behavior:
+   * - Queries the kernel RX queue via ::ioctl(FIONREAD) and returns the byte
+   * count.
+   *
+   * @return Bytes available to read immediately (0 if none).
+   * @throws std::system_error if ::ioctl(FIONREAD, ...) fails (preserves
+   * errno).
+   *
+   * @note This does not consume data and is independent of blocking mode.
+   */
+  size_t available();
 
 private:
   int serial_fd_;
