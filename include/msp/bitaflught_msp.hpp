@@ -4,10 +4,22 @@
 #include <cstdint>
 
 #include <sys/termios.h>
+#include <type_traits>
 
 #include "serial_stream.hpp"
 
 namespace msp {
+
+typedef enum class CommandType : std::uint8_t {
+  Response = '>',
+  Request = '<',
+  Error = '!'
+} CommandType;
+
+template <class E>
+constexpr std::underlying_type_t<E> to_underlying(E e) noexcept {
+  return static_cast<std::underlying_type_t<E>>(e);
+}
 
 class BitaflughtMsp {
 public:
@@ -25,8 +37,7 @@ public:
    *
    * @throws std::system_error if the serial stream cannot be opened/configured.
    */
-  explicit BitaflughtMsp(const char *dev = DEFAULT_SERIAL_DEVICE,
-                         speed_t baud_rate = DEFAULT_BAUD_RATE,
+  explicit BitaflughtMsp(const char *dev, speed_t baud_rate = DEFAULT_BAUD_RATE,
                          cc_t timeout = DEFAULT_TIMEOUT);
 
   ~BitaflughtMsp();
@@ -55,16 +66,18 @@ public:
    * @note This sends an MSP **request**\command frame (direction '<'). For
    *       responses ('>') and error frames ('!'), see the receiver logic.
    */
-  void send(std::uint8_t command_id, const void *payload, std::uint8_t size);
+  void send(CommandType command_type, std::uint8_t command_id,
+            const void *payload, std::uint8_t size);
 
-  void error(std::uint8_t command_id, void *payload, std::uint8_t size);
-  void response(std::uint8_t command_id, void *payload, std::uint8_t size);
   bool recv(std::uint8_t *command_id, void *payload, std::uint8_t maxSize,
             std::uint8_t *recvSize);
+
   bool waitFor(std::uint8_t command_id, void *payload, std::uint8_t maxSize,
                std::uint8_t *recvSize = nullptr);
+
   bool request(std::uint8_t command_id, void *payload, std::uint8_t maxSize,
                std::uint8_t *recvSize = nullptr);
+
   bool command(std::uint8_t command_id, void *payload, std::uint8_t size,
                bool waitACK = true);
 
