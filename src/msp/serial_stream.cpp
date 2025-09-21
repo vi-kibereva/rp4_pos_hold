@@ -3,7 +3,6 @@
 #include <cstring>
 
 #include <fcntl.h>
-#include <sys/filio.h>
 #include <sys/ioctl.h>
 #include <sys/termios.h>
 #include <termios.h>
