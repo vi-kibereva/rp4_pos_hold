@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include <sys/termios.h>
+
 #include "serial_stream.hpp"
 
 namespace msp {
@@ -10,28 +12,29 @@ namespace msp {
 class BitaflughtMsp {
 public:
   BitaflughtMsp() = delete;
-  BitaflughtMsp(uint32_t timeout = 500);
+  explicit BitaflughtMsp(const char *dev = DEFAULT_SERIAL_DEVICE,
+                         speed_t baud_rate = DEFAULT_BAUD_RATE,
+                         cc_t timeout = DEFAULT_TIMEOUT);
 
   ~BitaflughtMsp();
 
-  void send(uint8_t messageID, void *payload, uint8_t size);
-  void error(uint8_t messageID, void *payload, uint8_t size);
-  void response(uint8_t messageID, void *payload, uint8_t size);
-  bool recv(uint8_t *messageID, void *payload, uint8_t maxSize,
-            uint8_t *recvSize);
-  bool waitFor(uint8_t messageID, void *payload, uint8_t maxSize,
-               uint8_t *recvSize = nullptr);
-  bool request(uint8_t messageID, void *payload, uint8_t maxSize,
-               uint8_t *recvSize = nullptr);
-  bool command(uint8_t messageID, void *payload, uint8_t size,
+  void send(std::uint8_t messageID, void *payload, std::uint8_t size);
+  void error(std::uint8_t messageID, void *payload, std::uint8_t size);
+  void response(std::uint8_t messageID, void *payload, std::uint8_t size);
+  bool recv(std::uint8_t *messageID, void *payload, std::uint8_t maxSize,
+            std::uint8_t *recvSize);
+  bool waitFor(std::uint8_t messageID, void *payload, std::uint8_t maxSize,
+               std::uint8_t *recvSize = nullptr);
+  bool request(std::uint8_t messageID, void *payload, std::uint8_t maxSize,
+               std::uint8_t *recvSize = nullptr);
+  bool command(std::uint8_t messageID, void *payload, std::uint8_t size,
                bool waitACK = true);
 
   void reset();
-  bool getActiveModes(uint32_t *activeModes);
+  bool getActiveModes(std::uint32_t *activeModes);
 
 private:
   SerialStream stream_;
-  uint32_t timeout_;
 };
 
 } // namespace msp

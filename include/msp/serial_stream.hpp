@@ -8,7 +8,7 @@
 
 namespace msp {
 
-static constexpr uint32_t DEFAULT_BAUD_RATE = 115200;
+static constexpr std::uint32_t DEFAULT_BAUD_RATE = 115200;
 static constexpr char DEFAULT_SERIAL_DEVICE[] = "/dev/serial0";
 static constexpr cc_t DEFAULT_TIMEOUT = 2; // 0.2 seconds
 
@@ -74,7 +74,7 @@ public:
    * @return Number of bytes actually read (0 = no data/timeout/EOF).
    * @throws std::system_error on other read errors (preserves errno).
    */
-  [[nodiscard]] size_t read(uint8_t *buffer, size_t size);
+  [[nodiscard]] size_t read(std::uint8_t *buffer, size_t size);
 
   /**
    * @brief Write a buffer to the serial device (blocking until all bytes are
@@ -92,7 +92,7 @@ public:
    * @note If the FD is non-blocking, consider handling EAGAIN/EWOULDBLOCK
    *       (e.g., with poll/select) to avoid busy looping or premature failure.
    */
-  size_t write(uint8_t *data, size_t size);
+  size_t write(std::uint8_t *data, size_t size);
 
   /**
    * @brief Block until all pending output is transmitted.

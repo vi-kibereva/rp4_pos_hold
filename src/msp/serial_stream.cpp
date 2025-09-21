@@ -93,7 +93,7 @@ SerialStream::~SerialStream() noexcept {
   }
 }
 
-size_t SerialStream::read(uint8_t *buffer, size_t size) {
+size_t SerialStream::read(std::uint8_t *buffer, size_t size) {
   for (;;) {
     ssize_t n = ::read(serial_fd_, buffer, size);
     if (n >= 0)
@@ -110,7 +110,7 @@ size_t SerialStream::read(uint8_t *buffer, size_t size) {
   }
 }
 
-size_t SerialStream::write(uint8_t *data, size_t size) {
+size_t SerialStream::write(std::uint8_t *data, size_t size) {
   size_t sent = 0;
   while (sent < size) {
     ssize_t result = ::write(serial_fd_, data + sent, size - sent);
