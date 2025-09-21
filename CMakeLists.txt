@@ -21,6 +21,8 @@ endif()
 # Library with your MSP implementation
 add_library(bitaflught_msp STATIC
   src/msp/bitaflught_msp.cpp
+  src/msp/serial_stream.cpp
+  src/utils.cpp
 )
 
 target_include_directories(bitaflught_msp
