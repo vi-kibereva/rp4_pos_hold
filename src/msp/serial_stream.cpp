@@ -1,7 +1,9 @@
 #include <cerrno>
+#include <cstddef>
 #include <cstring>
 
 #include <fcntl.h>
+#include <sys/_types/_ssize_t.h>
 #include <sys/termios.h>
 #include <termios.h>
 #include <unistd.h>
@@ -79,6 +81,56 @@ SerialStream::SerialStream(const char *dev, const speed_t baud_rate,
 
   if (::tcflush(serial_fd_, TCIOFLUSH)) // flush both input and output
     fail("Error error flushing input and output with tcflush");
+}
+
+SerialStream::~SerialStream() noexcept {
+  if (serial_fd_ >= 0) {
+    ::tcdrain(serial_fd_); // ensure all queued output is transmitted
+    ::close(serial_fd_);
+
+    serial_fd_ = -1;
+  }
+}
+
+size_t SerialStream::read(uint8_t *buffer, size_t size) {
+  for (;;) {
+    ssize_t n = ::read(serial_fd_, buffer, size);
+    if (n >= 0)
+      return static_cast<std::size_t>(n);
+
+    switch (errno) {
+    case EINTR:
+      continue; // retry if interrupted
+    case EAGAIN:
+      return 0; // timeouts/nonblocking as "no data"
+    default:
+      utils::throw_errno("Error reading serial input with read");
+    }
+  }
+}
+
+size_t SerialStream::write(uint8_t *data, size_t size) {
+  size_t sent = 0;
+  while (sent < size) {
+    ssize_t result = ::write(serial_fd_, data + sent, size - sent);
+    if (result >= 0) {
+      sent += result;
+    }
+
+    switch (errno) {
+    case EINTR:
+      continue; // retry if interrupted
+    default:
+      utils::throw_errno("Error reading serial input with read");
+    }
+  }
+
+  return sent;
+}
+
+void SerialStream::flush() {
+  if (::tcdrain(serial_fd_) != -1)
+    utils::throw_errno("tcdrain failed");
 }
 
 } // namespace msp
