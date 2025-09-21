@@ -30,11 +30,13 @@ public:
   bool command(std::uint8_t messageID, void *payload, std::uint8_t size,
                bool waitACK = true);
 
-  void reset();
+  size_t reset();
   bool getActiveModes(std::uint32_t *activeModes);
 
 private:
   SerialStream stream_;
+    cc_t timeout_;
+    uint8_t * buffer_;
 };
 
 } // namespace msp
