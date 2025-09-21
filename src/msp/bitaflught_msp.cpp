@@ -11,6 +11,8 @@ namespace msp {
 BitaflughtMsp::BitaflughtMsp(const char *dev, speed_t baud_rate, cc_t timeout)
     : stream_(dev, baud_rate, timeout) {}
 
+  BitaflughtMsp::~BitaflughtMsp() = default;
+
 void BitaflughtMsp::send(CommandType command_type, std::uint8_t command_id,
                          const void *payload, std::uint8_t size) {
   uint8_t frame[5 + 255 + 1];
@@ -110,6 +112,7 @@ bool BitaflughtMsp::getActiveModes(std::uint32_t *active_modes) {
   (void)active_modes;
   return true;
 }
+
 
 static constexpr uint8_t BOXIDS[30] = {
     0,  //  0: MSP_MODE_ARM
