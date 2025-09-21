@@ -1,72 +1,40 @@
-#include "msp/bitaflught_msp.hpp"
-
+#include <cstdint>
+#include <cstring>
 #include <memory>
 #include <termios.h>
 #include <chrono>
 
+#include "msp/bitaflught_msp.hpp"
+#include "msp/serial_stream.hpp"
 
 namespace msp {
-    BitaflughtMsp::BitaflughtMsp(const char *dev, speed_t baud_rate, cc_t timeout) : stream_(*dev, baud_rate, timeout) {
-        timeout_ = timeout;
-        uint8_t * buffer_;
-    }
 
-    void BitaflughtMsp::send(std::uint8_t messageID, void *payload, std::uint8_t size) {
-        auto message = std::make_unique<uint8_t[]>(size + 6);
-        message[0] = '$';
-        message[1] = 'M';
-        message[2] = '<';
-        message[3] = size;
-        message[4] = messageID;
-        uint8_t checksum = size ^ messageID;
-        auto * payloadPtr = (uint8_t*)payload;
+BitaflughtMsp::BitaflughtMsp(const char *dev, speed_t baud_rate, cc_t timeout)
+    : stream_(dev, baud_rate, timeout) {}
 
-        for (uint8_t i = 0; i < size; ++i) {
-            uint8_t b = *(payloadPtr++);
-            checksum ^= b;
-            message[i+5] = b;
-        }
-        message[size+5] = checksum;
-        stream_.write(message.get(), size+6);
-    }
+void BitaflughtMsp::send(CommandType command_type, std::uint8_t command_id,
+                         const void *payload, std::uint8_t size) {
+  uint8_t frame[5 + 255 + 1];
+  frame[0] = '$';
+  frame[1] = 'M';
+  frame[2] = msp::to_underlying(command_type);
+  frame[3] = size;
+  frame[4] = command_id;
 
-    void BitaflughtMsp::error(std::uint8_t messageID, void *payload, std::uint8_t size) {
-        auto message = std::make_unique<uint8_t[]>(size + 6);
-        message[0] = '$';
-        message[1] = 'M';
-        message[2] = '!';
-        message[3] = size;
-        message[4] = messageID;
-        uint8_t checksum = size ^ messageID;
-        auto * payloadPtr = (uint8_t*)payload;
+  const uint8_t *p = static_cast<const uint8_t *>(payload);
+  uint8_t chk = static_cast<uint8_t>(size ^ command_id);
 
-        for (uint8_t i = 0; i < size; ++i) {
-            uint8_t b = *(payloadPtr++);
-            checksum ^= b;
-            message[i+5] = b;
-        }
-        message[size+5] = checksum;
-        stream_.write(message.get(), size+6);
-    }
+  for (uint8_t i = 0; i < size; ++i) {
+    uint8_t b = p[i];
+    frame[5 + i] = b;
+    chk ^= b;
+  }
 
-    void BitaflughtMsp::response(std::uint8_t messageID, void *payload, std::uint8_t size) {
-        auto message = std::make_unique<uint8_t[]>(size + 6);
-        message[0] = '$';
-        message[1] = 'M';
-        message[2] = '>';
-        message[3] = size;
-        message[4] = messageID;
-        uint8_t checksum = size ^ messageID;
-        auto * payloadPtr = (uint8_t*)payload;
+  frame[5 + size] = chk;
 
-        for (uint8_t i = 0; i < size; ++i) {
-            uint8_t b = *(payloadPtr++);
-            checksum ^= b;
-            message[i+5] = b;
-        }
-        message[size+5] = checksum;
-        stream_.write(message.get(), size+6);
-    }
+  const size_t total = 5 + size + 1;
+  stream_.write(frame, total);
+}
 
     bool BitaflughtMsp::recv(std::uint8_t *messageID, void *payload, std::uint8_t maxSize,
           std::uint8_t *recvSize) {
