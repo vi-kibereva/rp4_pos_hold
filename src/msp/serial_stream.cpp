@@ -95,10 +95,12 @@ SerialStream::~SerialStream() noexcept {
 size_t SerialStream::read(std::uint8_t *buffer, size_t size) {
   for (;;) {
     ssize_t n = ::read(serial_fd_, buffer, size);
+    const int e = errno;
+
     if (n >= 0)
       return static_cast<std::size_t>(n);
 
-    switch (errno) {
+    switch (e) {
     case EINTR:
       continue; // retry if interrupted
     case EAGAIN:
@@ -113,11 +115,14 @@ size_t SerialStream::write(std::uint8_t *data, size_t size) {
   size_t sent = 0;
   while (sent < size) {
     ssize_t result = ::write(serial_fd_, data + sent, size - sent);
+    const int e = errno;
+
     if (result >= 0) {
       sent += result;
+      continue;
     }
 
-    switch (errno) {
+    switch (e) {
     case EINTR:
       continue; // retry if interrupted
     default:
