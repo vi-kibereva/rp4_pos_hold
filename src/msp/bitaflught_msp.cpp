@@ -40,9 +40,9 @@ void BitaflughtMsp::send(CommandType command_type, std::uint8_t command_id,
 
 bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
                          std::uint8_t max_size, std::uint8_t *recv_size) {
-  uint8_t buffer[255 + 6];
+  uint8_t buffer[6 + 255];
   while (true) {
-    size_t size = stream_.read(buffer, max_size);
+    size_t size = stream_.read(buffer, sizeof(buffer));
     if (size == 0) {
       return false;
     }
@@ -63,7 +63,7 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
       for (std::uint8_t j = *recv_size + 5; j < max_size; ++j) {
         *(payload_ptr++) = 0;
       }
-      uint8_t checksum = buffer[size - 1];
+      uint8_t checksum = buffer[*recv_size - 1];
       if (checksumCalc == checksum) {
         return true;
       } else {
