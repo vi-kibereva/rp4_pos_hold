@@ -1,6 +1,7 @@
 #include <chrono>
 #include <cstdint>
 #include <cstring>
+#include <iostream>
 #include <termios.h>
 
 #include "msp/bitaflught_msp.hpp"
@@ -11,7 +12,7 @@ namespace msp {
 BitaflughtMsp::BitaflughtMsp(const char *dev, speed_t baud_rate, cc_t timeout)
     : stream_(dev, baud_rate, timeout) {}
 
-  BitaflughtMsp::~BitaflughtMsp() = default;
+BitaflughtMsp::~BitaflughtMsp() = default;
 
 void BitaflughtMsp::send(CommandType command_type, std::uint8_t command_id,
                          const void *payload, std::uint8_t size) {
@@ -39,8 +40,9 @@ void BitaflughtMsp::send(CommandType command_type, std::uint8_t command_id,
 
 bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
                          std::uint8_t max_size, std::uint8_t *recv_size) {
-  uint8_t buffer[255+6];
+  uint8_t buffer[255 + 6];
   while (true) {
+    std::cout << "Huy " << buffer;
     size_t size = stream_.read(buffer, max_size);
     if (size == 0) {
       return false;
@@ -52,21 +54,20 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
 
       uint8_t checksumCalc = *recv_size ^ *command_id;
 
-      uint8_t * payload_ptr = static_cast<uint8_t *>(payload);
+      uint8_t *payload_ptr = static_cast<uint8_t *>(payload);
 
-      for (int i = 0; i<*recv_size; ++i) {
-        uint8_t b = buffer[i+5];
+      for (int i = 0; i < *recv_size; ++i) {
+        uint8_t b = buffer[i + 5];
         checksumCalc ^= b;
         *(payload_ptr++) = b;
       }
       for (std::uint8_t j = *recv_size + 5; j < max_size; ++j) {
         *(payload_ptr++) = 0;
       }
-      uint8_t checksum = buffer[size-1];
+      uint8_t checksum = buffer[size - 1];
       if (checksumCalc == checksum) {
         return true;
       }
-
     }
   }
 }
@@ -79,17 +80,16 @@ bool BitaflughtMsp::request(std::uint8_t command_id, void *payload,
 
 void BitaflughtMsp::reset() { stream_.flush(); }
 
-  bool BitaflughtMsp::waitFor(std::uint8_t command_id,
-                              void*        payload,
-                              std::uint8_t max_size,
-                              std::uint8_t* recv_size) {
+bool BitaflughtMsp::waitFor(std::uint8_t command_id, void *payload,
+                            std::uint8_t max_size, std::uint8_t *recv_size) {
   std::uint8_t rx_id = 0;
   std::uint8_t scratch_len = 0;
-  std::uint8_t* out_len = recv_size ? recv_size : &scratch_len;
+  std::uint8_t *out_len = recv_size ? recv_size : &scratch_len;
 
   for (;;) {
     if (!recv(&rx_id, payload, max_size, out_len)) {
-      if (recv_size) *recv_size = 0;
+      if (recv_size)
+        *recv_size = 0;
       return false;
     }
 
@@ -98,7 +98,6 @@ void BitaflughtMsp::reset() { stream_.flush(); }
     }
   }
 }
-
 
 bool BitaflughtMsp::command(std::uint8_t command_id, void *payload,
                             std::uint8_t size, bool wait_ACK) {
@@ -113,7 +112,6 @@ bool BitaflughtMsp::getActiveModes(std::uint32_t *active_modes) {
 
   return true;
 }
-
 
 static constexpr uint8_t BOXIDS[30] = {
     0,  //  0: MSP_MODE_ARM
