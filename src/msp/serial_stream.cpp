@@ -99,8 +99,6 @@ size_t SerialStream::read(std::uint8_t *buffer, size_t size) {
   for (;;) {
     ssize_t n = ::read(serial_fd_, buffer, size);
 
-    std::cout << "Huy, read " << n << std::endl;
-
     const int e = errno;
 
     if (n >= 0)

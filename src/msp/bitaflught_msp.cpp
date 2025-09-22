@@ -42,7 +42,7 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
                          std::uint8_t max_size, std::uint8_t *recv_size) {
   uint8_t buffer[255 + 6];
   while (true) {
-    std::cout << "Huy " << buffer;
+    std::cout << "Huy " << buffer << std::endl;
     size_t size = stream_.read(buffer, max_size);
     if (size == 0) {
       return false;
