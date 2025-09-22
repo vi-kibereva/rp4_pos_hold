@@ -78,6 +78,8 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
       }
 
       std::cout << "HUY" << std::endl;
+    } else {
+      std::cout << "Піздося" << std::endl;
     }
   }
 
