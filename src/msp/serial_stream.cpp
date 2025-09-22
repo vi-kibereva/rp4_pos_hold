@@ -4,7 +4,6 @@
 
 #include <fcntl.h>
 #include <iostream>
-#include <iterator>
 #include <ostream>
 #include <sys/ioctl.h>
 #include <sys/termios.h>
