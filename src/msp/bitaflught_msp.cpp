@@ -110,6 +110,7 @@ bool BitaflughtMsp::command(std::uint8_t command_id, void *payload,
 }
 bool BitaflughtMsp::getActiveModes(std::uint32_t *active_modes) {
   (void)active_modes;
+
   return true;
 }
 
