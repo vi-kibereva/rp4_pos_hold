@@ -3,6 +3,9 @@
 #include <cstring>
 
 #include <fcntl.h>
+#include <iostream>
+#include <iterator>
+#include <ostream>
 #include <sys/ioctl.h>
 #include <sys/termios.h>
 #include <termios.h>
@@ -116,6 +119,8 @@ size_t SerialStream::write(std::uint8_t *data, size_t size) {
   while (sent < size) {
     ssize_t result = ::write(serial_fd_, data + sent, size - sent);
     const int e = errno;
+
+    std::cout << "Huy, wrote " << result << std::endl;
 
     if (result >= 0) {
       sent += result;
