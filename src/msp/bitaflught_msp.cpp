@@ -63,7 +63,7 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
       for (std::uint8_t j = *recv_size + 5; j < max_size; ++j) {
         *(payload_ptr++) = 0;
       }
-      uint8_t checksum = buffer[*recv_size - 1];
+      uint8_t checksum = buffer[*recv_size + 5];
       if (checksumCalc == checksum) {
         return true;
       } else {
