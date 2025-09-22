@@ -66,6 +66,8 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
       uint8_t checksum = buffer[size - 1];
       if (checksumCalc == checksum) {
         return true;
+      } else {
+        std::cout << "Invalid checksum" << checksumCalc << std::endl;
       }
     }
   }
