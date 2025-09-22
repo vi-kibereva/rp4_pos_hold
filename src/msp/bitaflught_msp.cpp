@@ -76,8 +76,6 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
                   << "; (received): " << static_cast<int>(checksum)
                   << std::endl;
       }
-    } else {
-      std::cout << "shit" << std::endl;
     }
   }
 
