@@ -46,7 +46,7 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
       return false;
     }
     if (buffer[0] == '$' && buffer[1] == 'M' &&
-        buffer[2] == msp::to_underlying(CommandType::Response)) {
+        buffer[2] == msp::to_underlying(CommandType::Request)) {
       *recv_size = buffer[3];
       std::cout << "*recv_size: " << static_cast<int>(*recv_size) << std::endl;
 
