@@ -82,8 +82,8 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
       std::cout << "HUY" << std::endl;
     } else {
       std::cout << "\"" << buffer[0] << "\" \"" << buffer[1] << "\" \"" << buffer[2] << "\" " << std::endl;
-      for (int i = 0; i < 3; ++i) {
-        std::printf("%02X%s", buffer[i], (i == 2 ? "\n" : " "));
+      for (int i = 0; i < size_b; ++i) {
+        std::printf("%02X%s", buffer[i], (i == size_b ? "\n" : " "));
       }
       std::cout << size << std::endl;
     }
