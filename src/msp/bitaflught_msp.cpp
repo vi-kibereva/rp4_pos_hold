@@ -39,16 +39,26 @@ void BitaflughtMsp::send(CommandType command_type, std::uint8_t command_id,
 
 bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
                          std::uint8_t max_size, std::uint8_t *recv_size) {
-  uint8_t buffer[6 + 255];
+  uint8_t buffer[5 + 255 + 1];
   uint8_t size_b = 0;
   while (true) {
-    size_t size = stream_.read(buffer+size_b, 4);
+    size_t size = stream_.read(buffer+size_b, 5);
     size_b += size;
     if (size == 0) {
       return false;
     }
-    if (buffer[0] == '$' && buffer[1] == 'M' && buffer[2] == '>') {
-      break;
+    if (buffer[0] == '$' && buffer[1] == 'M') {
+      *recv_size = buffer[3];
+      std::cout << "*recv_size: " << static_cast<int>(*recv_size) << std::endl;
+      size_t size = stream_.read(buffer+size_b, *recv_size);
+      size_b += size;
+      if(buffer[2] == '>') {
+        size_b = 0;
+        continue;
+      }
+      else if(buffer[2] == '<') {
+        break;
+      }
     } else {
       for (int i = 0; i < size_b; ++i) {
         std::cout << "\"" << buffer[i] << "\" ";
@@ -61,10 +71,7 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
     }
   }
 
-  *recv_size = buffer[3];
-  std::cout << "*recv_size: " << static_cast<int>(*recv_size) << std::endl;
-  size_t size = stream_.read(buffer+size_b, *recv_size);
-  size_b += size;
+
 
   for (int i = 0; i < 10; ++i) {
     std::printf("%02X%s", buffer[i], (i == 9 ? "\n" : " "));
