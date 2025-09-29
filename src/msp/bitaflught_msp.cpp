@@ -45,7 +45,7 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
     if (size == 0) {
       return false;
     }
-    if (buffer[0] == '$' && buffer[1] == 'M' && buffer[2] == '>') {
+    if (buffer[0] == '$' && buffer[1] == 'M' && buffer[2] == '<') {
       *recv_size = buffer[3];
       std::cout << "*recv_size: " << static_cast<int>(*recv_size) << std::endl;
 
@@ -83,6 +83,7 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
       for (int i = 0; i < 3; ++i) {
         std::printf("%02X%s", buffer[i], (i == 2 ? "\n" : " "));
       }
+      std::cout << size << std::endl;
     }
   }
 
