@@ -103,13 +103,16 @@ bool BitaflughtMsp::waitFor(std::uint8_t command_id, void *payload,
   for (;;) {
     if (!recv(&rx_id, payload, max_size, out_len)) {
       if (recv_size)
-        *recv_size = *out_len;
+        *recv_size = 0;
       return false;
     }
 
     if (rx_id == command_id) {
       return true;
     }
+
+    std::cout << "wrong command_id: " << static_cast<int>(command_id)
+              << std::endl;
   }
 }
 
