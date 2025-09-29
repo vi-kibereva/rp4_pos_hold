@@ -40,8 +40,10 @@ void BitaflughtMsp::send(CommandType command_type, std::uint8_t command_id,
 bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
                          std::uint8_t max_size, std::uint8_t *recv_size) {
   uint8_t buffer[6 + 255];
+  uint8_t size_b = 0;
   while (true) {
-    size_t size = stream_.read(buffer, sizeof(buffer));
+    size_t size = stream_.read(buffer+size_b, sizeof(buffer)-size_b);
+    size_b += size;
     if (size == 0) {
       return false;
     }
