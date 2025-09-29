@@ -70,7 +70,7 @@ SerialStream::SerialStream(const char *dev, const speed_t baud_rate,
   tty.c_cc[VTIME] = timeout; // if > 0: blocking read with timeout,
                              // if == 0: return immeditely
 
-  tty.c_cc[VMIN] = 0; // at least one byte
+  tty.c_cc[VMIN] = 1; // at least one byte
 
   // --- Baud rate ---
   if (::cfsetispeed(&tty, baud_rate) != 0)
@@ -95,12 +95,13 @@ SerialStream::~SerialStream() noexcept {
 }
 
 size_t SerialStream::read(std::uint8_t *buffer, size_t size) {
+  ssize_t n = 0;
   for (;;) {
-    ssize_t n = ::read(serial_fd_, buffer, size);
+    n += ::read(serial_fd_, buffer+n, size-n);
 
     const int e = errno;
 
-    if (n >= 0)
+    if (n >= size)
       return static_cast<std::size_t>(n);
 
     switch (e) {
