@@ -79,7 +79,10 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
 
       std::cout << "HUY" << std::endl;
     } else {
-      std::cout << "Піздося" << std::endl;
+      std::cout << "\"" << buffer[0] << "\" \"" << buffer[1] << "\" \"" << buffer[2] << "\" " << std::endl;
+      for (int i = 0; i < 3; ++i) {
+        std::printf("%02X%s", buffer[i], (i == 2 ? "\n" : " "));
+      }
     }
   }
 
@@ -98,7 +101,9 @@ bool BitaflughtMsp::waitFor(std::uint8_t command_id, void *payload,
                             std::uint8_t max_size, std::uint8_t *recv_size) {
   std::uint8_t rx_id = 0;
   std::uint8_t scratch_len = 0;
-  std::uint8_t *out_len = recv_size ? recv_size : &scratch_len;
+  // std::uint8_t *out_len = recv_size ? recv_size : &scratch_len;
+  std::uint8_t *out_len = recv_size;
+
 
   for (;;) {
     if (!recv(&rx_id, payload, max_size, out_len)) {

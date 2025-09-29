@@ -105,7 +105,7 @@ size_t SerialStream::read(std::uint8_t *buffer, size_t size) {
 
     switch (e) {
     case EINTR:
-      std::cout << "interupt" << std::endl;
+      // std::cout << "interupt" << std::endl;
       continue; // retry if interrupted
     case EAGAIN:
       return 0; // timeouts/nonblocking as "no data"
