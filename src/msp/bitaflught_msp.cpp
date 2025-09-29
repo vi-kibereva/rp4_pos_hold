@@ -103,7 +103,7 @@ bool BitaflughtMsp::waitFor(std::uint8_t command_id, void *payload,
   for (;;) {
     if (!recv(&rx_id, payload, max_size, out_len)) {
       if (recv_size)
-        *recv_size = 0;
+        *recv_size = *out_len;
       return false;
     }
 
