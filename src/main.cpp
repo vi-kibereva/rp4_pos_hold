@@ -3,8 +3,10 @@
 #include <cstdint>
 #include <cstdio>
 #include <exception>
+#include <clocale>
 
 int main(int argc, char **argv) {
+  setlocale(LC_ALL, "UA"); // Українська локалізація консолі
   if (argc < 2) {
     std::fprintf(stderr, "Usage: %s /dev/ttyUSB0\n", argv[0]);
     return 2;
