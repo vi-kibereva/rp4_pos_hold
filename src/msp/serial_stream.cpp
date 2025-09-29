@@ -70,7 +70,7 @@ SerialStream::SerialStream(const char *dev, const speed_t baud_rate,
   tty.c_cc[VTIME] = timeout; // if > 0: blocking read with timeout,
                              // if == 0: return immeditely
 
-  tty.c_cc[VMIN] = 1; // at least one byte
+  tty.c_cc[VMIN] = 0; // at least one byte
 
   // --- Baud rate ---
   if (::cfsetispeed(&tty, baud_rate) != 0)
