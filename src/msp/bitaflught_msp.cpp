@@ -43,6 +43,7 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
   uint8_t size_b = 0;
   while (true) {
     size_t size = stream_.read(buffer+size_b, 5);
+    std::cout << size << " size" << std::endl;
     size_b += size;
     if (size == 0) {
       return false;
@@ -51,6 +52,7 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
       *recv_size = buffer[3];
       std::cout << "*recv_size: " << static_cast<int>(*recv_size) << std::endl;
       size_t size = stream_.read(buffer+size_b, *recv_size);
+      std::cout << size << " size" << std::endl;
       size_b += size;
       if(buffer[2] == '>') {
         size_b = 0;
