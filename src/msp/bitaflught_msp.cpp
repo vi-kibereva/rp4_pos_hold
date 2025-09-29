@@ -105,6 +105,7 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
 
 
   std::cout << "Huy " << buffer << std::endl;
+  return false;
 }
 
 bool BitaflughtMsp::request(std::uint8_t command_id, void *payload,
