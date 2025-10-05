@@ -96,17 +96,18 @@ SerialStream::~SerialStream() noexcept {
 }
 
 size_t SerialStream::read(std::uint8_t *buffer, size_t size) {
+  ssize_t n = 0;
   for (;;) {
-    ssize_t n = ::read(serial_fd_, buffer, size);
+    n += ::read(serial_fd_, buffer+n, size-n);
 
     const int e = errno;
 
-    if (n >= 0)
+    if (n >= size)
       return static_cast<std::size_t>(n);
 
     switch (e) {
     case EINTR:
-      std::cout << "interupt" << std::endl;
+      // std::cout << "interupt" << std::endl;
       continue; // retry if interrupted
     case EAGAIN:
       return 0; // timeouts/nonblocking as "no data"
