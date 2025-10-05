@@ -6,9 +6,8 @@
 
 namespace utils {
 
-template <class... T> [[noreturn]] inline void throw_errno(T &&...parts) {
-  const int e = errno;
-
+template <class... T>
+[[noreturn]] inline void throw_errno(int e, T &&...parts) {
   std::ostringstream os;
   os << std::boolalpha;
 
