@@ -7,13 +7,13 @@
 #include <thread>
 #include <chrono>
 
+
 // MSP command for motor control
 constexpr uint8_t MSP_SET_MOTOR = 214;
 
 // Spin motors a little (bench test)
-bool spinMotors(msp::BitaflughtMsp &msp) {
+bool spinMotors(msp::BitaflughtMsp &msp, const uint16_t motorValues[4]) {
     // Example: 4 motors, spin motor 1 to 1200, others minimal 1000
-    uint16_t motorValues[4] = {1000, 100, 100, 100};
     uint8_t payload[8];
     for (int i = 0; i < 4; i++) {
         payload[2*i]   = motorValues[i] & 0xFF;
@@ -83,22 +83,16 @@ int main(int argc, char **argv) {
         }
 
         // --- New: spin motors a little ---
-        if (!spinMotors(msp)) {
-            std::fprintf(stderr, "Motor spin failed\n");
+        while (true) {
+            char c = static_cast<char>(getchar());
+
+            std::uint16_t run_speed[4] = {1000, 1000, 1000, 1000};
+            std::uint16_t stop_speed[4] = {0, 0, 0, 0};
+
+            if (!spinMotors(msp, c == 'w' ? run_speed : stop_speed)) {
+                std::fprintf(stderr, "Motor spin failed\n");
+            }
         }
-
-        // Wait 2 seconds so you can observe motor spin
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-
-        // Stop motors (set all to minimal 1000)
-        uint16_t motorValuesStop[4] = {0, 0, 0, 0};
-        uint8_t payloadStop[8];
-        for (int i = 0; i < 4; i++) {
-            payloadStop[2*i]   = motorValuesStop[i] & 0xFF;
-            payloadStop[2*i+1] = motorValuesStop[i] >> 8;
-        }
-        msp.request(MSP_SET_MOTOR, payloadStop, sizeof(payloadStop), &recv_size);
-
         return 0;
 
     } catch (const std::exception &ex) {
