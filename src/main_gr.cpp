@@ -13,7 +13,7 @@ constexpr uint8_t MSP_SET_MOTOR = 214;
 // Spin motors a little (bench test)
 bool spinMotors(msp::BitaflughtMsp &msp) {
     // Example: 4 motors, spin motor 1 to 1200, others minimal 1000
-    uint16_t motorValues[4] = {1200, 1000, 1000, 1000};
+    uint16_t motorValues[4] = {120, 100, 100, 100};
     uint8_t payload[8];
     for (int i = 0; i < 4; i++) {
         payload[2*i]   = motorValues[i] & 0xFF;
