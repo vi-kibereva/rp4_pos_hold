@@ -37,76 +37,113 @@ void BitaflughtMsp::send(CommandType command_type, std::uint8_t command_id,
   stream_.write(frame, total);
 }
 
-bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
-                         std::uint8_t max_size, std::uint8_t *recv_size) {
+// bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload,
+//                          std::uint8_t max_size, std::uint8_t *recv_size) {
+//   uint8_t buffer[5 + 255 + 1];
+//   uint8_t size_b = 0;
+//   while (true) {
+//     size_t size = stream_.read(buffer+size_b, 5);
+//     std::cout << size << " size" << std::endl;
+//     size_b += size;
+//     if (size == 0) {
+//       return false;
+//     }
+//     if (buffer[0] == '$' && buffer[1] == 'M') {
+//       *recv_size = buffer[3];
+//       std::cout << "*recv_size: " << static_cast<int>(*recv_size) << std::endl;
+//       size_t size = stream_.read(buffer+size_b, *recv_size);
+//       std::cout << size << " size" << std::endl;
+//       size_b += size;
+//       if(buffer[2] == '>') {
+//         size_b = 0;
+//         continue;
+//       }
+//       else if(buffer[2] == '<') {
+//         break;
+//       }
+//     } else {
+//       for (int i = 0; i < size_b; ++i) {
+//         std::cout << "\"" << buffer[i] << "\" ";
+//       }
+//       std::cout << std::endl;
+//       for (int i = 0; i < size_b; ++i) {
+//         std::printf("%02X%s", buffer[i], (i == size_b ? "\n" : " "));
+//       }
+//       std::cout << size << std::endl;
+//     }
+//   }
+//
+//
+//
+//   for (int i = 0; i < 10; ++i) {
+//     std::printf("%02X%s", buffer[i], (i == 9 ? "\n" : " "));
+//   }
+//
+//   *command_id = buffer[4];
+//
+//   uint8_t checksumCalc = *recv_size ^ *command_id;
+//
+//   uint8_t *payload_ptr = static_cast<uint8_t *>(payload);
+//
+//   for (int i = 0; i < *recv_size; ++i) {
+//     uint8_t b = buffer[i + 5];
+//     checksumCalc ^= b;
+//     *(payload_ptr++) = b;
+//   }
+//   for (std::uint8_t j = *recv_size + 5; j < max_size; ++j) {
+//     *(payload_ptr++) = 0;
+//   }
+//   uint8_t checksum = buffer[*recv_size + 5];
+//   if (checksumCalc == checksum) {
+//     return true;
+//   } else {
+//     std::cout << "Invalid checksum (calc): "
+//               << static_cast<int>(checksumCalc)
+//               << "; (received): " << static_cast<int>(checksum)
+//               << std::endl;
+//   }
+//
+//
+//   std::cout << "Huy " << buffer << std::endl;
+//   return false;
+// }
+bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload, std::uint8_t max_size, std::uint8_t *recv_size) {
   uint8_t buffer[5 + 255 + 1];
   uint8_t size_b = 0;
   while (true) {
-    size_t size = stream_.read(buffer+size_b, 5);
-    std::cout << size << " size" << std::endl;
-    size_b += size;
-    if (size == 0) {
-      return false;
-    }
-    if (buffer[0] == '$' && buffer[1] == 'M') {
+    while (stream_.available()<6) {}
+    size_b += stream_.read(buffer+size_b, 6);
+    if (buffer[0] == '$' && buffer[1] == 'M' && buffer[2] == '>') {
       *recv_size = buffer[3];
-      std::cout << "*recv_size: " << static_cast<int>(*recv_size) << std::endl;
-      size_t size = stream_.read(buffer+size_b, *recv_size);
-      std::cout << size << " size" << std::endl;
-      size_b += size;
-      if(buffer[2] == '>') {
-        size_b = 0;
-        continue;
+      *command_id = buffer[4];
+      std::uint8_t checksumCalc = *recv_size ^*command_id;
+      auto *payload_ptr = static_cast<uint8_t *>(payload);
+      while (stream_.available()<*recv_size+1){}
+      size_b += stream_.read(buffer+size_b, *recv_size+1);
+      for (int i =0; i<*recv_size; i++) {
+        uint8_t b = buffer[i+5];
+        checksumCalc ^= b;
+        *(payload_ptr++) = b;
       }
-      else if(buffer[2] == '<') {
-        break;
+      uint8_t checksum = buffer[5+*recv_size];
+      for (std::uint8_t j = *recv_size + 6; j < max_size; ++j) {
+        *(payload_ptr++) = 0;
       }
-    } else {
-      for (int i = 0; i < size_b; ++i) {
-        std::cout << "\"" << buffer[i] << "\" ";
+      if (checksum == checksumCalc) {
+        return true;
       }
-      std::cout << std::endl;
-      for (int i = 0; i < size_b; ++i) {
-        std::printf("%02X%s", buffer[i], (i == size_b ? "\n" : " "));
-      }
-      std::cout << size << std::endl;
+      std::cout << "Invalid checksum (calc): "
+               << static_cast<int>(checksumCalc)
+               << "; (received): " << static_cast<int>(checksum)
+                << std::endl;
+
     }
+    std::cout << "Wrong header" << buffer[0] << std::endl;
+    return false;
   }
-
-
-
-  for (int i = 0; i < 10; ++i) {
-    std::printf("%02X%s", buffer[i], (i == 9 ? "\n" : " "));
-  }
-
-  *command_id = buffer[4];
-
-  uint8_t checksumCalc = *recv_size ^ *command_id;
-
-  uint8_t *payload_ptr = static_cast<uint8_t *>(payload);
-
-  for (int i = 0; i < *recv_size; ++i) {
-    uint8_t b = buffer[i + 5];
-    checksumCalc ^= b;
-    *(payload_ptr++) = b;
-  }
-  for (std::uint8_t j = *recv_size + 5; j < max_size; ++j) {
-    *(payload_ptr++) = 0;
-  }
-  uint8_t checksum = buffer[*recv_size + 5];
-  if (checksumCalc == checksum) {
-    return true;
-  } else {
-    std::cout << "Invalid checksum (calc): "
-              << static_cast<int>(checksumCalc)
-              << "; (received): " << static_cast<int>(checksum)
-              << std::endl;
-  }
-
-
-  std::cout << "Huy " << buffer << std::endl;
-  return false;
 }
+
+
 
 bool BitaflughtMsp::request(std::uint8_t command_id, void *payload,
                             std::uint8_t max_size, std::uint8_t *recv_size) {
