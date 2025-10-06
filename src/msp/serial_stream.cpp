@@ -107,7 +107,6 @@ size_t SerialStream::read(std::uint8_t *buffer, size_t size) {
 
     switch (e) {
     case EINTR:
-      // std::cout << "interupt" << std::endl;
       continue; // retry if interrupted
     case EAGAIN:
       return 0; // timeouts/nonblocking as "no data"
@@ -122,8 +121,6 @@ size_t SerialStream::write(std::uint8_t *data, size_t size) {
   while (sent < size) {
     ssize_t result = ::write(serial_fd_, data + sent, size - sent);
     const int e = errno;
-
-    std::cout << "Huy, wrote " << result << std::endl;
 
     if (result >= 0) {
       sent += result;
