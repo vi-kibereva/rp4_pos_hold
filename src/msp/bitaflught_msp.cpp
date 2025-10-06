@@ -113,16 +113,17 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload, std::uint8_t m
   while (true) {
     size_t a;
     while ((a = stream_.available())<6) {
-      std::cout << "Available: " << a << std::endl;
     }
-    std::cout << "Exited" << std::endl;
     size_b += stream_.read(buffer+size_b, 6);
     if (buffer[0] == '$' && buffer[1] == 'M' && buffer[2] == '>') {
       *recv_size = buffer[3];
       *command_id = buffer[4];
       std::uint8_t checksumCalc = *recv_size ^*command_id;
       auto *payload_ptr = static_cast<uint8_t *>(payload);
-      while (stream_.available()<*recv_size+1){}
+      size_t a;
+      while ((a = stream_.available())<*recv_size+1) {
+        std::cout << "Available: " << a << std::endl;
+      }
       size_b += stream_.read(buffer+size_b, *recv_size+1);
       for (int i =0; i<*recv_size; i++) {
         uint8_t b = buffer[i+5];
