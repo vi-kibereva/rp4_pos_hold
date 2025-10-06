@@ -111,7 +111,10 @@ bool BitaflughtMsp::recv(std::uint8_t *command_id, void *payload, std::uint8_t m
   uint8_t buffer[5 + 255 + 1];
   uint8_t size_b = 0;
   while (true) {
-    while (stream_.available()<6) {}
+    size_t a;
+    while ((a = stream_.available())<6) {
+      std::cout << "Available: " << a << std::endl;
+    }
     size_b += stream_.read(buffer+size_b, 6);
     if (buffer[0] == '$' && buffer[1] == 'M' && buffer[2] == '>') {
       *recv_size = buffer[3];
