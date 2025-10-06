@@ -37,7 +37,7 @@ add_executable(rp4_pos_hold1 ${ALL_SRC})
 
 # --- Second executable: main_gr_exec ---
 # Collect all sources except main.cpp
-file(GLOB_recurse MAIN_GR_SRC "${CMAKE_SOURCE_DIR}/src/*.cpp")
+file(GLOB_RECURSE MAIN_GR_SRC "${CMAKE_SOURCE_DIR}/src/*.cpp")
 list(FILTER MAIN_GR_SRC EXCLUDE REGEX ".*/main\\.cpp$")
 
 # Add main_gr.cpp explicitly
