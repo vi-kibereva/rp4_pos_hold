@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     //
     // // --- Example 2: MSP_ATTITUDE ---
     std::uint8_t payload2[6]; // to receive response
-    constexpr uint8_t MSP_ATTITUDE = 109;
+    constexpr uint8_t MSP_ATTITUDE = 108;
     if (msp.request(MSP_ATTITUDE, payload,
                     static_cast<uint8_t>(sizeof(payload)), &recv_size)) {
       if (recv_size >= 6) {
