@@ -3,7 +3,8 @@
 #include <cstring>
 
 #include <fcntl.h>
-#include <sys/filio.h>
+#include <iostream>
+#include <ostream>
 #include <sys/ioctl.h>
 #include <sys/termios.h>
 #include <termios.h>
@@ -17,8 +18,10 @@ namespace msp {
 SerialStream::SerialStream(const char *dev, const speed_t baud_rate,
                            const cc_t timeout)
     : serial_fd_(::open(dev, O_RDWR | O_NOCTTY | O_CLOEXEC)) {
-  if (serial_fd_ < 0)
-    utils::throw_errno("while trying to open serial device <", dev, ">");
+  if (serial_fd_ < 0) {
+    auto e = errno;
+    utils::throw_errno(e, "while trying to open serial device <", dev, ">");
+  }
 
   // a helper function to close serial_fd_ on error
   auto fail = [&](auto &&...msg) -> void {
@@ -26,11 +29,10 @@ SerialStream::SerialStream(const char *dev, const speed_t baud_rate,
     if (serial_fd_ >= 0) {
       ::close(serial_fd_);
     }
-    errno = e;
 
     /// std::forward<decltype(msg)>(msg)... preserves the original value
     /// category (lvalue/rvalue)
-    utils::throw_errno(std::forward<decltype(msg)>(msg)...);
+    utils::throw_errno(e, std::forward<decltype(msg)>(msg)...);
   };
 
   struct termios tty;
@@ -94,18 +96,22 @@ SerialStream::~SerialStream() noexcept {
 }
 
 size_t SerialStream::read(std::uint8_t *buffer, size_t size) {
+  ssize_t n = 0;
   for (;;) {
-    ssize_t n = ::read(serial_fd_, buffer, size);
-    if (n >= 0)
+    n += ::read(serial_fd_, buffer+n, size-n);
+
+    const int e = errno;
+
+    if (n >= size)
       return static_cast<std::size_t>(n);
 
-    switch (errno) {
+    switch (e) {
     case EINTR:
       continue; // retry if interrupted
     case EAGAIN:
       return 0; // timeouts/nonblocking as "no data"
     default:
-      utils::throw_errno("Error reading serial input with read");
+      utils::throw_errno(e, "Error reading serial input with read");
     }
   }
 }
@@ -114,15 +120,18 @@ size_t SerialStream::write(std::uint8_t *data, size_t size) {
   size_t sent = 0;
   while (sent < size) {
     ssize_t result = ::write(serial_fd_, data + sent, size - sent);
+    const int e = errno;
+
     if (result >= 0) {
       sent += result;
+      continue;
     }
 
-    switch (errno) {
+    switch (e) {
     case EINTR:
       continue; // retry if interrupted
     default:
-      utils::throw_errno("Error reading serial input with read");
+      utils::throw_errno(e, "Error reading serial input with read");
     }
   }
 
@@ -131,13 +140,14 @@ size_t SerialStream::write(std::uint8_t *data, size_t size) {
 
 void SerialStream::flush() {
   if (::tcdrain(serial_fd_) != 0)
-    utils::throw_errno("tcdrain failed");
+    utils::throw_errno(errno, "tcdrain failed");
 }
 
 size_t SerialStream::available() {
   int n;
   if (::ioctl(serial_fd_, FIONREAD, &n) != 0)
-    utils::throw_errno("Error getting available bytes for read with ioctl");
+    utils::throw_errno(errno,
+                       "Error getting available bytes for read with ioctl");
 
   return static_cast<size_t>(n);
 }
