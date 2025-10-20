@@ -2,9 +2,6 @@
 #define MSP_HPP
 
 #include <cstdint>
-#include <format>
-#include <iostream>
-#include <optional>
 #include <stdexcept>
 #include <termios.h>
 
@@ -137,9 +134,8 @@ struct AttitudeData {
  * C++ struct.
  *
  * Operations use the underlying serial stream configured at construction time.
- * Methods return std::optional<T> to signal success (value present) or failure
- * (std::nullopt) when the flight controller does not respond or returns invalid
- * data.
+ * Methods throw std::runtime_error when the flight controller does not respond
+ * or returns invalid data.
  */
 class Msp {
 public:
