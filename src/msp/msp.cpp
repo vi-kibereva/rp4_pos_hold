@@ -1,14 +1,22 @@
 #include "msp/msp.hpp"
 
-#include <cstring>
-#include <iostream>
-
 namespace msp {
 
 Msp::Msp(const char *dev, speed_t baud_rate, cc_t timeout)
     : bitaflught_msp_(dev, baud_rate, timeout) {}
 
-AltitudeData Msp::attitude() {}
+AttitudeData Msp::attitude() {
+  constexpr std::uint8_t EXPECTED_SIZE = 6;
+  std::uint8_t payload[EXPECTED_SIZE];
+  std::uint8_t recv_size = 0;
+
+  if (!bitaflught_msp_.request(MSP_ATTITUDE, payload, EXPECTED_SIZE,
+                               &recv_size)) {
+    throw std::runtime_error("MSP_ATTITUDE request failed or timed out");
+  }
+
+  return AttitudeData(recv_size, payload);
+}
 
 StatusData Msp::status() {
   constexpr std::uint8_t EXPECTED_SIZE = 13;
