@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
     msp.setRawRc(rc_data);
     std::cout << "RC values sent successfully\n";
 
-    sleep(1000);
+    sleep(1);
 
     std::cout << msp.rc() << '\n';
 
