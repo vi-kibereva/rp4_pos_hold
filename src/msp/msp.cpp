@@ -66,7 +66,7 @@ void Msp::setRawRc(const SetRawRcData &data) {
     payload[i * 2 + 1] = (ch[i] >> 8) & 0xFF;
   }
 
-  if (!bitaflught_msp_.command(MSP_SET_RAW_RC, payload, size, false)) {
+  if (!bitaflught_msp_.command(MSP_SET_RAW_RC, payload, size, true)) {
     throw std::runtime_error("MSP_SET_RAW_RC command failed");
   }
 }
