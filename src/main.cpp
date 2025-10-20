@@ -2,6 +2,7 @@
 
 #include <exception>
 #include <iostream>
+#include <unistd.h>
 
 int main(int argc, char **argv) {
   if (argc < 2) {
@@ -28,11 +29,14 @@ int main(int argc, char **argv) {
     std::cout << msp.altitude() << '\n';
 
     // --- Example: MSP_SET_RAW_RC (commented out for safety) ---
-    // Uncomment to send RC values: roll, pitch, throttle, yaw, aux1-4
-    // msp::SetRawRcData rc_data(1500, 1500, 1000, 1500, 1000, 1000, 1000,
-    // 1000); std::cout << "Sending: " << rc_data << '\n';
-    // msp.setRawRc(rc_data);
-    // std::cout << "RC values sent successfully\n";
+    msp::SetRawRcData rc_data(1500, 1500, 1000, 1500, 1900, 1000, 1700, 1000);
+    std::cout << "Sending: " << rc_data << '\n';
+    msp.setRawRc(rc_data);
+    std::cout << "RC values sent successfully\n";
+
+    sleep(1000);
+
+    std::cout << msp.rc() << '\n';
 
     return 0;
 
