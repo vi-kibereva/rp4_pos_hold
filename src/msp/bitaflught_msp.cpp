@@ -86,10 +86,10 @@ void BitaflughtMsp::reset() { stream_.flush(); }
 bool BitaflughtMsp::waitFor(std::uint8_t command_id, void *payload,
                             std::uint8_t max_size, std::uint8_t *recv_size) {
   std::uint8_t rx_id = 0;
-  std::uint8_t *out_len = recv_size;
+  std::uint8_t out_len;
 
   while (true) {
-    if (!recv(&rx_id, payload, max_size, out_len)) {
+    if (!recv(&rx_id, payload, max_size, (recv_size ? recv_size : &out_len))) {
       if (recv_size)
         *recv_size = 0;
       return false;
@@ -107,7 +107,7 @@ bool BitaflughtMsp::command(std::uint8_t command_id, void *payload,
   send(CommandType::Request, command_id, payload, size);
 
   if (wait_ACK)
-    return waitFor(command_id, NULL, 0);
+    return waitFor(command_id, nullptr, 0);
   return true;
 }
 bool BitaflughtMsp::getActiveModes(std::uint32_t *active_modes) {
