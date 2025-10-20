@@ -1,13 +1,11 @@
 #include "msp/msp.hpp"
 
-#include <clocale>
-#include <cstdint>
-#include <cstdio>
 #include <exception>
+#include <iostream>
 
 int main(int argc, char **argv) {
   if (argc < 2) {
-    std::fprintf(stderr, "Usage: %s /dev/ttyUSB0\n", argv[0]);
+    std::cerr << "Usage: " << argv[0] << " /dev/ttyUSB0\n";
     return 2;
   }
 
@@ -18,51 +16,28 @@ int main(int argc, char **argv) {
     msp::Msp msp(port, B115200, 10);
 
     // --- Example: MSP_STATUS ---
-    auto status = msp.status();
-    std::printf("Status ~ cycle_time=%u us, i2c_errors=%u, sensors=0x%04X, "
-                "pid_profile=%u, system_load=%u%%\n",
-                status.cycle_time, status.i2c_errors, status.sensor_flags,
-                status.pid_profile, status.system_load);
-
-    // Print active flight modes
-    std::printf("Active flight modes: ");
-    bool first = true;
-    for (int i = 0; i < 32; i++) {
-      if (status.flight_mode_flags & (1u << i)) {
-        if (!first)
-          std::printf(", ");
-        std::printf("%s", msp::getBoxName(static_cast<msp::BoxId>(i)));
-        first = false;
-      }
-    }
-    if (first) {
-      std::printf("none");
-    }
-    std::printf("\n");
+    std::cout << msp.status() << '\n';
 
     // --- Example: MSP_RC ---
-    auto rc = msp.rc();
-    std::printf("RC ~ %u channels: ", rc.channel_count);
-    for (std::uint8_t i = 0; i < rc.channel_count; i++) {
-      std::printf("%u ", rc.channels[i]);
-    }
-    std::printf("\n");
+    std::cout << msp.rc() << '\n';
 
     // --- Example: MSP_ATTITUDE ---
-    auto attitude = msp.attitude();
-    std::printf("Attitude ~ roll=%.1f° pitch=%.1f° yaw=%.1f°\n",
-                attitude.roll_tenths / 10.0, attitude.pitch_tenths / 10.0,
-                attitude.yaw_tenths / 10.0);
+    std::cout << msp.attitude() << '\n';
 
     // --- Example: MSP_ALTITUDE ---
-    auto altitude = msp.altitude();
-    std::printf("Altitude: %d cm, Vario: %d cm/s\n", altitude.altitude,
-                altitude.vario);
+    std::cout << msp.altitude() << '\n';
+
+    // --- Example: MSP_SET_RAW_RC (commented out for safety) ---
+    // Uncomment to send RC values: roll, pitch, throttle, yaw, aux1-4
+    // msp::SetRawRcData rc_data(1500, 1500, 1000, 1500, 1000, 1000, 1000,
+    // 1000); std::cout << "Sending: " << rc_data << '\n';
+    // msp.setRawRc(rc_data);
+    // std::cout << "RC values sent successfully\n";
 
     return 0;
 
   } catch (const std::exception &ex) {
-    std::fprintf(stderr, "Error: %s\n", ex.what());
+    std::cerr << "Error: " << ex.what() << '\n';
     return 1;
   }
 }

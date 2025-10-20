@@ -2,11 +2,13 @@
 #define MSP_HPP
 
 #include <cstdint>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <termios.h>
 
 #include "bitaflught_msp.hpp"
+#include "box_ids.hpp"
 
 namespace msp {
 
@@ -22,120 +24,10 @@ enum MspCommand : std::uint8_t {
   MSP_RC = 105,
   MSP_ATTITUDE = 108,
   MSP_ALTITUDE = 109,
+  MSP_SET_RAW_RC = 200,
 };
 
 constexpr std::uint8_t MAX_RC_CHANNELS = 18;
-
-/**
- * @brief Flight mode box IDs from Betaflight.
- */
-enum BoxId : std::uint8_t {
-  BOXARM = 0,
-  BOXANGLE,
-  BOXHORIZON,
-  BOXMAG,
-  BOXALTHOLD,
-  BOXHEADFREE,
-  BOXCHIRP,
-  BOXPASSTHRU,
-  BOXFAILSAFE,
-  BOXPOSHOLD,
-  BOXGPSRESCUE,
-  BOXANTIGRAVITY = 11,
-  BOXHEADADJ,
-  BOXCAMSTAB,
-  BOXBEEPERON,
-  BOXLEDLOW,
-  BOXCALIB,
-  BOXOSD,
-  BOXTELEMETRY,
-  BOXSERVO1,
-  BOXSERVO2,
-  BOXSERVO3,
-  BOXBLACKBOX,
-  BOXAIRMODE,
-  BOX3D,
-  BOXFPVANGLEMIX,
-  BOXBLACKBOXERASE,
-  BOXCAMERA1,
-  BOXCAMERA2,
-  BOXCAMERA3,
-  BOXCRASHFLIP,
-  BOXPREARM,
-  BOXBEEPGPSCOUNT,
-  BOXVTXPITMODE,
-  BOXPARALYZE,
-  BOXUSER1,
-  BOXUSER2,
-  BOXUSER3,
-  BOXUSER4,
-  BOXPIDAUDIO,
-  BOXACROTRAINER,
-  BOXVTXCONTROLDISABLE,
-  BOXLAUNCHCONTROL,
-  BOXMSPOVERRIDE,
-  BOXSTICKCOMMANDDISABLE,
-  BOXBEEPERMUTE,
-  BOXREADY,
-  BOXLAPTIMERRESET,
-};
-
-/**
- * @brief Get the name of a box ID.
- */
-inline const char* getBoxName(BoxId boxId) {
-  switch (boxId) {
-    case BOXARM: return "ARM";
-    case BOXANGLE: return "ANGLE";
-    case BOXHORIZON: return "HORIZON";
-    case BOXMAG: return "MAG";
-    case BOXALTHOLD: return "ALTHOLD";
-    case BOXHEADFREE: return "HEADFREE";
-    case BOXCHIRP: return "CHIRP";
-    case BOXPASSTHRU: return "PASSTHRU";
-    case BOXFAILSAFE: return "FAILSAFE";
-    case BOXPOSHOLD: return "POSHOLD";
-    case BOXGPSRESCUE: return "GPSRESCUE";
-    case BOXANTIGRAVITY: return "ANTIGRAVITY";
-    case BOXHEADADJ: return "HEADADJ";
-    case BOXCAMSTAB: return "CAMSTAB";
-    case BOXBEEPERON: return "BEEPERON";
-    case BOXLEDLOW: return "LEDLOW";
-    case BOXCALIB: return "CALIB";
-    case BOXOSD: return "OSD";
-    case BOXTELEMETRY: return "TELEMETRY";
-    case BOXSERVO1: return "SERVO1";
-    case BOXSERVO2: return "SERVO2";
-    case BOXSERVO3: return "SERVO3";
-    case BOXBLACKBOX: return "BLACKBOX";
-    case BOXAIRMODE: return "AIRMODE";
-    case BOX3D: return "3D";
-    case BOXFPVANGLEMIX: return "FPVANGLEMIX";
-    case BOXBLACKBOXERASE: return "BLACKBOXERASE";
-    case BOXCAMERA1: return "CAMERA1";
-    case BOXCAMERA2: return "CAMERA2";
-    case BOXCAMERA3: return "CAMERA3";
-    case BOXCRASHFLIP: return "CRASHFLIP";
-    case BOXPREARM: return "PREARM";
-    case BOXBEEPGPSCOUNT: return "BEEPGPSCOUNT";
-    case BOXVTXPITMODE: return "VTXPITMODE";
-    case BOXPARALYZE: return "PARALYZE";
-    case BOXUSER1: return "USER1";
-    case BOXUSER2: return "USER2";
-    case BOXUSER3: return "USER3";
-    case BOXUSER4: return "USER4";
-    case BOXPIDAUDIO: return "PIDAUDIO";
-    case BOXACROTRAINER: return "ACROTRAINER";
-    case BOXVTXCONTROLDISABLE: return "VTXCONTROLDISABLE";
-    case BOXLAUNCHCONTROL: return "LAUNCHCONTROL";
-    case BOXMSPOVERRIDE: return "MSPOVERRIDE";
-    case BOXSTICKCOMMANDDISABLE: return "STICKCOMMANDDISABLE";
-    case BOXBEEPERMUTE: return "BEEPERMUTE";
-    case BOXREADY: return "READY";
-    case BOXLAPTIMERRESET: return "LAPTIMERRESET";
-    default: return "UNKNOWN";
-  }
-}
 
 /**
  * @brief RC channel data from MSP_RC.
@@ -163,6 +55,57 @@ struct RcData {
       channels[i] =
           static_cast<uint16_t>(payload[i * 2] | (payload[i * 2 + 1] << 8));
     }
+  }
+
+  friend std::ostream &operator<<(std::ostream &os, const RcData &rc) {
+    os << "RC ~ " << static_cast<int>(rc.channel_count) << " channels: ";
+    for (std::uint8_t i = 0; i < rc.channel_count; i++) {
+      os << rc.channels[i];
+      if (i < rc.channel_count - 1) {
+        os << " ";
+      }
+    }
+    return os;
+  }
+};
+
+/**
+ * @brief RC channel data to send via MSP_SET_RAW_RC.
+ *
+ * This structure holds RC channel values to be sent to the flight controller
+ * (command 200). Used to override RC input, typically for autonomous flight.
+ */
+struct Channels {
+  std::uint16_t roll;
+  std::uint16_t pitch;
+  std::uint16_t throttle;
+  std::uint16_t yaw;
+  std::uint16_t aux1;
+  std::uint16_t aux2;
+  std::uint16_t aux3;
+  std::uint16_t aux4;
+};
+
+struct SetRawRcData {
+  Channels channels;
+
+  SetRawRcData() : channels{0, 0, 0, 0, 0, 0, 0, 0} {}
+
+  SetRawRcData(const Channels &ch) : channels(ch) {}
+
+  SetRawRcData(std::uint16_t roll, std::uint16_t pitch, std::uint16_t throttle,
+               std::uint16_t yaw, std::uint16_t aux1 = 1000,
+               std::uint16_t aux2 = 1000, std::uint16_t aux3 = 1000,
+               std::uint16_t aux4 = 1000)
+      : channels{roll, pitch, throttle, yaw, aux1, aux2, aux3, aux4} {}
+
+  friend std::ostream &operator<<(std::ostream &os, const SetRawRcData &rc) {
+    os << "SET_RAW_RC ~ roll=" << rc.channels.roll
+       << ", pitch=" << rc.channels.pitch
+       << ", throttle=" << rc.channels.throttle << ", yaw=" << rc.channels.yaw
+       << ", aux1=" << rc.channels.aux1 << ", aux2=" << rc.channels.aux2
+       << ", aux3=" << rc.channels.aux3 << ", aux4=" << rc.channels.aux4;
+    return os;
   }
 };
 
@@ -198,6 +141,30 @@ struct StatusData {
                                " (expected >= 13)\n");
     }
   }
+
+  friend std::ostream &operator<<(std::ostream &os, const StatusData &status) {
+    os << "Status ~ cycle_time=" << status.cycle_time
+       << " us, i2c_errors=" << status.i2c_errors << ", sensors=0x" << std::hex
+       << status.sensor_flags << std::dec
+       << ", pid_profile=" << static_cast<int>(status.pid_profile)
+       << ", system_load=" << status.system_load << "%\n";
+
+    os << "Active flight modes: ";
+    bool first = true;
+    for (int i = 0; i < 32; i++) {
+      if (status.flight_mode_flags & (1u << i)) {
+        if (!first) {
+          os << ", ";
+        }
+        os << getBoxName(static_cast<BoxId>(i));
+        first = false;
+      }
+    }
+    if (first) {
+      os << "none";
+    }
+    return os;
+  }
 };
 
 /**
@@ -221,6 +188,13 @@ struct AltitudeData {
                                " (expected >= 6)\n");
     }
   }
+
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const AltitudeData &altitude) {
+    os << "Altitude: " << altitude.altitude << " cm, Vario: " << altitude.vario
+       << " cm/s";
+    return os;
+  }
 };
 
 struct AttitudeData {
@@ -238,6 +212,14 @@ struct AttitudeData {
                                std::to_string(recv_size) +
                                " (expected >= 6)\n");
     }
+  }
+
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const AttitudeData &attitude) {
+    os << "Attitude ~ roll=" << (attitude.roll_tenths / 10.0)
+       << "° pitch=" << (attitude.pitch_tenths / 10.0)
+       << "° yaw=" << (attitude.yaw_tenths / 10.0) << "°";
+    return os;
   }
 };
 
@@ -324,6 +306,22 @@ public:
   [[nodiscard]] AltitudeData altitude();
 
   [[nodiscard]] AttitudeData attitude();
+
+  /**
+   * @brief Send RC channel values to the flight controller.
+   *
+   * Behavior:
+   * - Sends MSP_SET_RAW_RC (command 200) with RC channel values as payload.
+   * - This overrides the RC input from the physical receiver.
+   * - Typically used for autonomous flight or MSP-based RC control.
+   * - Throws std::runtime_error if the send fails.
+   *
+   * @param data SetRawRcData containing channel count and channel values.
+   *
+   * @note Requires the flight controller to be compiled with USE_RX_MSP.
+   * @note The MSPOVERRIDE flight mode may need to be active.
+   */
+  void setRawRc(const SetRawRcData &data);
 
 private:
   BitaflughtMsp bitaflught_msp_;
