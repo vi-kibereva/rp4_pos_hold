@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <stdexcept>
+#include <string>
 #include <termios.h>
 
 #include "bitaflught_msp.hpp"
@@ -26,14 +27,125 @@ enum MspCommand : std::uint8_t {
 constexpr std::uint8_t MAX_RC_CHANNELS = 18;
 
 /**
+ * @brief Flight mode box IDs from Betaflight.
+ */
+enum BoxId : std::uint8_t {
+  BOXARM = 0,
+  BOXANGLE,
+  BOXHORIZON,
+  BOXMAG,
+  BOXALTHOLD,
+  BOXHEADFREE,
+  BOXCHIRP,
+  BOXPASSTHRU,
+  BOXFAILSAFE,
+  BOXPOSHOLD,
+  BOXGPSRESCUE,
+  BOXANTIGRAVITY = 11,
+  BOXHEADADJ,
+  BOXCAMSTAB,
+  BOXBEEPERON,
+  BOXLEDLOW,
+  BOXCALIB,
+  BOXOSD,
+  BOXTELEMETRY,
+  BOXSERVO1,
+  BOXSERVO2,
+  BOXSERVO3,
+  BOXBLACKBOX,
+  BOXAIRMODE,
+  BOX3D,
+  BOXFPVANGLEMIX,
+  BOXBLACKBOXERASE,
+  BOXCAMERA1,
+  BOXCAMERA2,
+  BOXCAMERA3,
+  BOXCRASHFLIP,
+  BOXPREARM,
+  BOXBEEPGPSCOUNT,
+  BOXVTXPITMODE,
+  BOXPARALYZE,
+  BOXUSER1,
+  BOXUSER2,
+  BOXUSER3,
+  BOXUSER4,
+  BOXPIDAUDIO,
+  BOXACROTRAINER,
+  BOXVTXCONTROLDISABLE,
+  BOXLAUNCHCONTROL,
+  BOXMSPOVERRIDE,
+  BOXSTICKCOMMANDDISABLE,
+  BOXBEEPERMUTE,
+  BOXREADY,
+  BOXLAPTIMERRESET,
+};
+
+/**
+ * @brief Get the name of a box ID.
+ */
+inline const char* getBoxName(BoxId boxId) {
+  switch (boxId) {
+    case BOXARM: return "ARM";
+    case BOXANGLE: return "ANGLE";
+    case BOXHORIZON: return "HORIZON";
+    case BOXMAG: return "MAG";
+    case BOXALTHOLD: return "ALTHOLD";
+    case BOXHEADFREE: return "HEADFREE";
+    case BOXCHIRP: return "CHIRP";
+    case BOXPASSTHRU: return "PASSTHRU";
+    case BOXFAILSAFE: return "FAILSAFE";
+    case BOXPOSHOLD: return "POSHOLD";
+    case BOXGPSRESCUE: return "GPSRESCUE";
+    case BOXANTIGRAVITY: return "ANTIGRAVITY";
+    case BOXHEADADJ: return "HEADADJ";
+    case BOXCAMSTAB: return "CAMSTAB";
+    case BOXBEEPERON: return "BEEPERON";
+    case BOXLEDLOW: return "LEDLOW";
+    case BOXCALIB: return "CALIB";
+    case BOXOSD: return "OSD";
+    case BOXTELEMETRY: return "TELEMETRY";
+    case BOXSERVO1: return "SERVO1";
+    case BOXSERVO2: return "SERVO2";
+    case BOXSERVO3: return "SERVO3";
+    case BOXBLACKBOX: return "BLACKBOX";
+    case BOXAIRMODE: return "AIRMODE";
+    case BOX3D: return "3D";
+    case BOXFPVANGLEMIX: return "FPVANGLEMIX";
+    case BOXBLACKBOXERASE: return "BLACKBOXERASE";
+    case BOXCAMERA1: return "CAMERA1";
+    case BOXCAMERA2: return "CAMERA2";
+    case BOXCAMERA3: return "CAMERA3";
+    case BOXCRASHFLIP: return "CRASHFLIP";
+    case BOXPREARM: return "PREARM";
+    case BOXBEEPGPSCOUNT: return "BEEPGPSCOUNT";
+    case BOXVTXPITMODE: return "VTXPITMODE";
+    case BOXPARALYZE: return "PARALYZE";
+    case BOXUSER1: return "USER1";
+    case BOXUSER2: return "USER2";
+    case BOXUSER3: return "USER3";
+    case BOXUSER4: return "USER4";
+    case BOXPIDAUDIO: return "PIDAUDIO";
+    case BOXACROTRAINER: return "ACROTRAINER";
+    case BOXVTXCONTROLDISABLE: return "VTXCONTROLDISABLE";
+    case BOXLAUNCHCONTROL: return "LAUNCHCONTROL";
+    case BOXMSPOVERRIDE: return "MSPOVERRIDE";
+    case BOXSTICKCOMMANDDISABLE: return "STICKCOMMANDDISABLE";
+    case BOXBEEPERMUTE: return "BEEPERMUTE";
+    case BOXREADY: return "READY";
+    case BOXLAPTIMERRESET: return "LAPTIMERRESET";
+    default: return "UNKNOWN";
+  }
+}
+
+/**
  * @brief RC channel data from MSP_RC.
  *
  * This structure holds the parsed response from an MSP_RC request
  * (command 105). Contains RC channel values, typically in range [1000, 2000].
  */
 struct RcData {
-  std::uint8_t channel_count;                  ///< Number of channels received.
-  std::uint16_t channels[MAX_RC_CHANNELS];     ///< RC channel values.
+  std::uint8_t channel_count;              ///< Number of channels received.
+  std::uint16_t channels[MAX_RC_CHANNELS]; ///< RC channel values.
 
   RcData(std::uint8_t recv_size, std::uint8_t *payload) {
     if (recv_size < 2 || recv_size % 2 != 0) {
@@ -48,7 +160,8 @@ struct RcData {
     }
 
     for (std::uint8_t i = 0; i < channel_count; i++) {
-      channels[i] = static_cast<uint16_t>(payload[i * 2] | (payload[i * 2 + 1] << 8));
+      channels[i] =
+          static_cast<uint16_t>(payload[i * 2] | (payload[i * 2 + 1] << 8));
     }
   }
 };
@@ -57,23 +170,26 @@ struct RcData {
  * @brief Flight controller status data from MSP_STATUS.
  *
  * This structure holds the parsed response from an MSP_STATUS request
- * (command 101). Contains cycle time, error counters, sensor flags, and system load.
+ * (command 101). Contains cycle time, error counters, sensor flags, and system
+ * load.
  */
 struct StatusData {
-  std::uint16_t cycle_time;      ///< Task delta time in microseconds.
-  std::uint16_t i2c_errors;      ///< I2C error counter.
-  std::uint16_t sensor_flags;    ///< Sensor presence flags (ACC, BARO, MAG, GPS, etc.).
+  std::uint16_t cycle_time; ///< Task delta time in microseconds.
+  std::uint16_t i2c_errors; ///< I2C error counter.
+  std::uint16_t
+      sensor_flags; ///< Sensor presence flags (ACC, BARO, MAG, GPS, etc.).
   std::uint32_t flight_mode_flags; ///< Flight mode flags (first 32 bits).
-  std::uint8_t pid_profile;      ///< Current PID profile index.
-  std::uint16_t system_load;     ///< Average system load percentage.
+  std::uint8_t pid_profile;        ///< Current PID profile index.
+  std::uint16_t system_load;       ///< Average system load percentage.
 
   StatusData(std::uint8_t recv_size, std::uint8_t *payload) {
     if (recv_size >= 13) {
       cycle_time = static_cast<uint16_t>(payload[0] | (payload[1] << 8));
       i2c_errors = static_cast<uint16_t>(payload[2] | (payload[3] << 8));
       sensor_flags = static_cast<uint16_t>(payload[4] | (payload[5] << 8));
-      flight_mode_flags = static_cast<uint32_t>(payload[6] | (payload[7] << 8) |
-                                                (payload[8] << 16) | (payload[9] << 24));
+      flight_mode_flags =
+          static_cast<uint32_t>(payload[6] | (payload[7] << 8) |
+                                (payload[8] << 16) | (payload[9] << 24));
       pid_profile = payload[10];
       system_load = static_cast<uint16_t>(payload[11] | (payload[12] << 8));
     } else {
@@ -165,8 +281,8 @@ public:
    * - Waits for a response containing cycle time, error counters, sensor flags,
    *   flight mode flags, PID profile, and system load.
    * - Parses the response into a StatusData struct.
-   * - Throws std::runtime_error if the request times out, the response is invalid,
-   *   or the payload size is incorrect.
+   * - Throws std::runtime_error if the request times out, the response is
+   * invalid, or the payload size is incorrect.
    *
    * @return StatusData on success.
    */
@@ -179,8 +295,8 @@ public:
    * - Sends MSP_RC (command 105) request with no payload.
    * - Waits for a response containing RC channel values (uint16_t per channel).
    * - Parses the response into an RcData struct.
-   * - Throws std::runtime_error if the request times out, the response is invalid,
-   *   or the payload size is incorrect.
+   * - Throws std::runtime_error if the request times out, the response is
+   * invalid, or the payload size is incorrect.
    *
    * @return RcData on success.
    *
@@ -197,8 +313,8 @@ public:
    *   - bytes [0..3]: int32_t altitude (cm, little-endian)
    *   - bytes [4..5]: int16_t vario (cm/s, little-endian)
    * - Parses the response into an AltitudeData struct.
-   * - Throws std::runtime_error if the request times out, the response is invalid,
-   *   or the payload size is incorrect.
+   * - Throws std::runtime_error if the request times out, the response is
+   * invalid, or the payload size is incorrect.
    *
    * @return AltitudeData on success.
    *
