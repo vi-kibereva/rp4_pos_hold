@@ -24,6 +24,22 @@ int main(int argc, char **argv) {
                 status.cycle_time, status.i2c_errors, status.sensor_flags,
                 status.pid_profile, status.system_load);
 
+    // Print active flight modes
+    std::printf("Active flight modes: ");
+    bool first = true;
+    for (int i = 0; i < 32; i++) {
+      if (status.flight_mode_flags & (1u << i)) {
+        if (!first)
+          std::printf(", ");
+        std::printf("%s", msp::getBoxName(static_cast<msp::BoxId>(i)));
+        first = false;
+      }
+    }
+    if (first) {
+      std::printf("none");
+    }
+    std::printf("\n");
+
     // --- Example: MSP_RC ---
     auto rc = msp.rc();
     std::printf("RC ~ %u channels: ", rc.channel_count);
