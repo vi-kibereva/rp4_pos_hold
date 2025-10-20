@@ -56,4 +56,20 @@ AltitudeData Msp::altitude() {
   return AltitudeData(recv_size, payload);
 }
 
+void Msp::setRawRc(const SetRawRcData &data) {
+  std::uint8_t payload[16]; // 8 channels * 2 bytes each
+  std::uint8_t size = 16;
+
+  // Pack channel values as little-endian uint16_t
+  const std::uint16_t *ch = reinterpret_cast<const std::uint16_t *>(&data.channels);
+  for (std::uint8_t i = 0; i < 8; i++) {
+    payload[i * 2] = ch[i] & 0xFF;
+    payload[i * 2 + 1] = (ch[i] >> 8) & 0xFF;
+  }
+
+  if (!bitaflught_msp_.command(MSP_SET_RAW_RC, payload, size, false)) {
+    throw std::runtime_error("MSP_SET_RAW_RC command failed");
+  }
+}
+
 } // namespace msp
