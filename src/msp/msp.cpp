@@ -19,7 +19,6 @@ AttitudeData Msp::attitude() {
 }
 
 StatusData Msp::status() {
-  constexpr std::uint8_t EXPECTED_SIZE = 13;
   std::uint8_t payload[32]; // MSP_STATUS can be longer with extended flags
   std::uint8_t recv_size = 0;
 
@@ -35,8 +34,7 @@ RcData Msp::rc() {
   std::uint8_t payload[MAX_RC_CHANNELS * 2]; // 2 bytes per channel
   std::uint8_t recv_size = 0;
 
-  if (!bitaflught_msp_.request(MSP_RC, payload, sizeof(payload),
-                               &recv_size)) {
+  if (!bitaflught_msp_.request(MSP_RC, payload, sizeof(payload), &recv_size)) {
     throw std::runtime_error("MSP_RC request failed or timed out");
   }
 
@@ -61,7 +59,8 @@ void Msp::setRawRc(const SetRawRcData &data) {
   std::uint8_t size = 16;
 
   // Pack channel values as little-endian uint16_t
-  const std::uint16_t *ch = reinterpret_cast<const std::uint16_t *>(&data.channels);
+  const std::uint16_t *ch =
+      reinterpret_cast<const std::uint16_t *>(&data.channels);
   for (std::uint8_t i = 0; i < 8; i++) {
     payload[i * 2] = ch[i] & 0xFF;
     payload[i * 2 + 1] = (ch[i] >> 8) & 0xFF;
