@@ -23,6 +23,22 @@ project(rp4_pos_hold1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Set default build type if not specified
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# Compiler flags for different build types
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  message(STATUS "Building in Debug mode - no optimizations, debug symbols enabled")
+  # Debug flags: no optimization, debug symbols, all warnings
+  set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -Wall -Wextra -pedantic")
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+  message(STATUS "Building in Release mode - optimizations enabled")
+  # Release flags: optimize for performance
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+endif()
+
 # Include headers
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
