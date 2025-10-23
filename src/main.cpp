@@ -3,6 +3,8 @@
 #include <exception>
 #include <iostream>
 #include <unistd.h>
+#include <chrono>
+#include <thread>
 
 int main(int argc, char **argv) {
   if (argc < 2) {
@@ -28,10 +30,17 @@ int main(int argc, char **argv) {
     // --- Example: MSP_ALTITUDE ---
     std::cout << msp.altitude() << '\n';
 
+    auto start = std::chrono::steady_clock::now();
+
     // --- Example: MSP_SET_RAW_RC (commented out for safety) ---
     msp::SetRawRcData rc_data(1500, 1500, 1000, 1500, 1900, 1000, 1700, 1000);
     std::cout << "Sending: " << rc_data << '\n';
-    msp.setRawRc(rc_data);
+    while (true) {
+      msp.setRawRc(rc_data);
+      auto now = std::chrono::steady_clock::now();
+      if (duration_cast<std::chrono::seconds>(now - start).count() >= 3)
+        break;
+    }
     std::cout << "RC values sent successfully\n";
 
     sleep(1);
