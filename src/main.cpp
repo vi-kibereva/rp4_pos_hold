@@ -35,19 +35,13 @@ int main(int argc, char **argv) {
     // --- Example: MSP_SET_RAW_RC (commented out for safety) ---
     msp::SetRawRcData rc_data(1500, 1500, 1000, 1500, 1900, 1000, 1700, 1000);
     std::cout << "Sending: " << rc_data << '\n';
-    while (true) {
+    for (int i = 0; i<200; ++i){
       msp.setRawRc(rc_data);
-      auto now = std::chrono::steady_clock::now();
-      if (duration_cast<std::chrono::seconds>(now - start).count() >= 3)
-        break;
     }
     std::cout << "Armed"<< '\n';
     msp::SetRawRcData rc_data_throttle(1500, 1500, 1300, 1500, 1900, 1000, 1700, 1000);
-    while (true) {
+    for (int i = 0; i<200; ++i){
       msp.setRawRc(rc_data_throttle);
-      auto now = std::chrono::steady_clock::now();
-      if (duration_cast<std::chrono::seconds>(now - start).count() >= 3)
-        break;
     }
     std::cout << "RC values sent successfully\n";
 
