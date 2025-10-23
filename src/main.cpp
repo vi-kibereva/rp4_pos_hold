@@ -37,11 +37,13 @@ int main(int argc, char **argv) {
     std::cout << "Sending: " << rc_data << '\n';
     for (int i = 0; i<200; ++i){
       msp.setRawRc(rc_data);
+      std::cout << msp.rc() << '\n';
     }
     std::cout << "Armed"<< '\n';
     msp::SetRawRcData rc_data_throttle(1500, 1500, 1300, 1500, 1900, 1000, 1700, 1000);
     for (int i = 0; i<200; ++i){
       msp.setRawRc(rc_data_throttle);
+      std::cout << msp.rc() << '\n';
     }
     std::cout << "RC values sent successfully\n";
 
