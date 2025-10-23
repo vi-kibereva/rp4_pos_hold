@@ -41,6 +41,14 @@ int main(int argc, char **argv) {
       if (duration_cast<std::chrono::seconds>(now - start).count() >= 3)
         break;
     }
+    std::cout << "Armed"<< '\n';
+    msp::SetRawRcData rc_data_throttle(1500, 1500, 1300, 1500, 1900, 1000, 1700, 1000);
+    while (true) {
+      msp.setRawRc(rc_data_throttle);
+      auto now = std::chrono::steady_clock::now();
+      if (duration_cast<std::chrono::seconds>(now - start).count() >= 3)
+        break;
+    }
     std::cout << "RC values sent successfully\n";
 
     sleep(1);
