@@ -1,14 +1,14 @@
-#include "msp/bitaflught_msp.hpp"
+#include "msp/msp.hpp"
 
-#include <cstdint>
-#include <cstdio>
 #include <exception>
-#include <clocale>
+#include <iostream>
+#include <unistd.h>
+#include <chrono>
+#include <thread>
 
 int main(int argc, char **argv) {
-  setlocale(LC_ALL, "UA"); // Українська локалізація консолі
   if (argc < 2) {
-    std::fprintf(stderr, "Usage: %s /dev/ttyUSB0\n", argv[0]);
+    std::cerr << "Usage: " << argv[0] << " /dev/ttyUSB0\n";
     return 2;
   }
 
@@ -16,57 +16,45 @@ int main(int argc, char **argv) {
 
   try {
     // Construct MSP client
-    msp::BitaflughtMsp msp(port, B115200, 10);
+    msp::Msp msp(port, B115200, 10);
 
-    // --- Example 1: MSP_API_VERSION ---
-    constexpr uint8_t MSP_API_VERSION = 0x01;
-    std::uint8_t payload[3]; // to receive response
-    std::uint8_t recv_size = 0;
+    // --- Example: MSP_STATUS ---
+    std::cout << msp.status() << '\n';
 
-    if (!msp.request(MSP_API_VERSION, payload, 3, &recv_size)) {
-      std::fprintf(stderr, "No/invalid response to MSP_API_VERSION\n");
-      return 1;
+    // --- Example: MSP_RC ---
+    std::cout << msp.rc() << '\n';
+
+    // --- Example: MSP_ATTITUDE ---
+    std::cout << msp.attitude() << '\n';
+
+    // --- Example: MSP_ALTITUDE ---
+    std::cout << msp.altitude() << '\n';
+
+    auto start = std::chrono::steady_clock::now();
+
+    // --- Example: MSP_SET_RAW_RC (commented out for safety) ---
+    msp::SetRawRcData rc_data(1500, 1500, 1000, 1500, 1900, 1000, 1700, 1000);
+    std::cout << "Sending: " << rc_data << '\n';
+    for (int i = 0; i<200; ++i){
+      msp.setRawRc(rc_data);
+      std::cout << msp.rc() << '\n';
     }
-
-    if (recv_size < 3) {
-      std::fprintf(stderr, "MSP_API_VERSION payload too small: %u\n",
-                   recv_size);
-      return 1;
+    std::cout << "Armed"<< '\n';
+    msp::SetRawRcData rc_data_throttle(1500, 1500, 1300, 1500, 1900, 1000, 1700, 1000);
+    for (int i = 0; i<200; ++i){
+      msp.setRawRc(rc_data_throttle);
+      std::cout << msp.rc() << '\n';
     }
+    std::cout << "RC values sent successfully\n";
 
-    const uint8_t mspProtocol = payload[0];
-    const uint8_t apiMajor = payload[1];
-    const uint8_t apiMinor = payload[2];
-    std::printf("MSP protocol: %u, API: %u.%u\n", mspProtocol, apiMajor,
-                apiMinor);
-    //
-    // // --- Example 2: MSP_ATTITUDE ---
-    std::uint8_t payload2[6]; // to receive response
-    constexpr uint8_t MSP_ATTITUDE = 108;
-    if (msp.request(MSP_ATTITUDE, payload,
-                    static_cast<uint8_t>(sizeof(payload)), &recv_size)) {
-      if (recv_size >= 6) {
-        const auto roll_tenths =
-            static_cast<int16_t>(payload[0] | (payload[1] << 8));
-        const auto pitch_tenths =
-            static_cast<int16_t>(payload[2] | (payload[3] << 8));
-        const auto yaw_tenths =
-            static_cast<int16_t>(payload[4] | (payload[5] << 8));
-        std::printf("Attitude ~ roll=%.1f° pitch=%.1f° yaw=%.1f°\n",
-                    roll_tenths / 10.0, pitch_tenths / 10.0, yaw_tenths
-                    / 10.0);
-      } else {
-        std::fprintf(stderr, "MSP_ATTITUDE payload size %u (expected >= 6)\n",
-                     recv_size);
-      }
-    } else {
-      std::fprintf(stderr, "MSP_ATTITUDE failed or not supported\n");
-    }
+    sleep(1);
+
+    std::cout << msp.rc() << '\n';
 
     return 0;
 
   } catch (const std::exception &ex) {
-    std::fprintf(stderr, "Error: %s\n", ex.what());
+    std::cerr << "Error: " << ex.what() << '\n';
     return 1;
   }
 }
