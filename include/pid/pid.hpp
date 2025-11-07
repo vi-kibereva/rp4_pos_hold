@@ -54,7 +54,7 @@ public:
    * @return uint32x4_t Four RC channel PWM values (1500 is center, 1000-2000
    * range)
    */
-  uint32x2_t caldulate_raw_rc(float32x2_t current_position,
+  uint32x2_t calculate_raw_rc(float32x2_t current_position,
                               float32x2_t desired_position = {0, 0});
 
 private:
