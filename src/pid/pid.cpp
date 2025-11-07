@@ -77,6 +77,5 @@ uint32x2_t PidController::calculate_raw_rc(float32x2_t current_position,
 
   // Return 4-channel RC values (x, y, and two additional channels at neutral)
   // Channels 3 and 4 are set to neutral (1500)
-  uint32x2_t result = {pwm_x, pwm_y};
-  return result;
+  return output;
 }
