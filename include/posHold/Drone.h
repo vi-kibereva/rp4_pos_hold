@@ -5,58 +5,63 @@
 #include <cstdint>
 #include <opencv2/opencv.hpp>
 
-#include "RemoteAPIClient.h"
+#include "msp/msp.hpp"
 
 class Drone
 {
 public:
     struct CameraInfo
     {
-        double fov;
-        int resolutionX;
-        int resolutionY;
-        double minDist;
-        double maxDist;
+        CameraInfo(
+            const double fov,
+            const int resolutionX,
+            const int resolutionY,
+            const double minDist,
+            const double maxDist) :
+            fov{ fov },
+            resolutionX{ resolutionX },
+            resolutionY{ resolutionY },
+            minDist{ minDist },
+            maxDist{ maxDist },
+            focalLength{ resolutionX / (std::tan(fov / 2) * 2) }
+        {
+        }
+
+        const double fov;
+        const int resolutionX;
+        const int resolutionY;
+        const double minDist;
+        const double maxDist;
+        const double focalLength;
+    };
+
+    struct GyroData
+    {
+        double roll;
+        double pitch;
+        double yaw;
     };
 
     constexpr static std::uint64_t s_propellersCount = 4;
 
-    const CameraInfo cameraInfo{
+    const CameraInfo cameraInfo = CameraInfo(
         CV_PI / 2,
         512,
         512,
         0.01,
         1000.0
-    };
+    );
 
-    const double kf = 3e-6;
-    const double km = 3e-7;
-
-    explicit Drone(RemoteAPIObject::sim& sim);
+    explicit Drone(msp::Msp& m_msp);
 
     [[nodiscard]] cv::Mat getGrayscaleImage() const;
 
-    [[nodiscard]] std::vector<double> getGyroData() const;
+    [[nodiscard]] GyroData getGyroData() const;
 
     [[nodiscard]] double getAltitude() const;
 
-    void setAngularVelocities(const std::array<double, s_propellersCount>& angularVelocities);
-
-    void update();
-
 private:
-    static std::vector<double> rotateForce(const std::vector<double>& angles, double thrust);
-
-    RemoteAPIObject::sim* m_sim;
-    std::int64_t m_drone;
-    std::array<std::int64_t, s_propellersCount> m_respondables;
-    std::int64_t m_visionSensor;
-    std::int64_t m_gyroSensorScript;
-    std::pair<int, int> m_cameraFrameSize;
-
-    std::array<double, s_propellersCount> m_angularVelocities{};
-
-    const std::array<std::int64_t, s_propellersCount> m_propellerDirections{ 1, -1, 1, -1 };
+    msp::Msp* m_msp;
 };
 
 #endif

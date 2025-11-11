@@ -1,9 +1,9 @@
 #ifndef VECMOVE_H
 #define VECMOVE_H
 
-#include "Drone.h"
-#include "VecDown.h"
-#include "CameraOpticalFlow.h"
+#include "posHold/Drone.h"
+#include "posHold/VecDown.h"
+#include "posHold/CameraOpticalFlow.h"
 
 class VecMove
 {

@@ -51,8 +51,7 @@ public:
    * format
    * @param desired_position Desired position as [x, y], defaults to origin [0,
    * 0]
-   * @return uint32x4_t Four RC channel PWM values (1500 is center, 1000-2000
-   * range)
+   * @return uint32x2_t roll and pitch
    */
   uint32x2_t calculate_raw_rc(float32x2_t current_position,
                               float32x2_t desired_position = vdup_n_f32(0.0f));

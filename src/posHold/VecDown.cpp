@@ -1,4 +1,4 @@
-#include "VecDown.h"
+#include "posHold/VecDown.h"
 
 VecDown::VecDown(const Drone& drone) :
     m_drone{ &drone }
@@ -40,20 +40,20 @@ cv::Point2f VecDown::getVecDownDisplacement() const
 
 cv::Vec3d VecDown::calcVecDown3d() const
 {
-    std::vector<double> gyroData = m_drone->getGyroData();
+    Drone::GyroData gyroData = m_drone->getGyroData();
 
     cv::Vec3f vecDown{ 0.0f, 0.0f, -1.0f };
 
     cv::Matx33d Rx(1, 0, 0,
-                   0, cos(-gyroData[0]), -sin(-gyroData[0]),
-                   0, sin(-gyroData[0]),  cos(-gyroData[0]));
+                   0, cos(-gyroData.roll), -sin(-gyroData.roll),
+                   0, sin(-gyroData.roll),  cos(-gyroData.roll));
 
-    cv::Matx33d Ry(cos(-gyroData[1]), 0, sin(-gyroData[1]),
+    cv::Matx33d Ry(cos(-gyroData.pitch), 0, sin(-gyroData.pitch),
                    0, 1, 0,
-                   -sin(-gyroData[1]), 0, cos(-gyroData[1]));
+                   -sin(-gyroData.pitch), 0, cos(-gyroData.pitch));
 
-    cv::Matx33d Rz(cos(-gyroData[2]), -sin(-gyroData[2]), 0,
-                   sin(-gyroData[2]),  cos(-gyroData[2]), 0,
+    cv::Matx33d Rz(cos(-gyroData.yaw), -sin(-gyroData.yaw), 0,
+                   sin(-gyroData.yaw),  cos(-gyroData.yaw), 0,
                    0, 0, 1);
 
     cv::Matx33d R = Rz * Ry * Rx;
@@ -65,16 +65,15 @@ cv::Point2f VecDown::calcVecDownProjection() const
 {
     cv::Vec3d v = calcVecDown3d();
 
-    double f = (m_drone->cameraInfo.resolutionX / 2.0) / std::tan(m_drone->cameraInfo.fov / 2.0);
+    const double depth = -v[2];
 
-    double depth = -v[2];
-
-    if (depth <= 0.0) {
-        return {-1.0, -1.0};
+    if (depth <= 0.0)
+    {
+        return { 0.0, 0.0 };
     }
 
-    double x_screen = -f * (v[0] / depth);
-    double y_screen = f * (v[1] / depth);
+    double x_screen = -m_drone->cameraInfo.focalLength * (v[0] / depth);
+    double y_screen = m_drone->cameraInfo.focalLength * (v[1] / depth);
 
     float u = m_drone->cameraInfo.resolutionX / 2.0 + x_screen;
     float v_scr = m_drone->cameraInfo.resolutionY / 2.0 + y_screen;
