@@ -1,4 +1,4 @@
-#include "VecMove.h"
+#include "posHold/VecMove.h"
 
 VecMove::VecMove(const Drone& drone) :
     m_drone{ &drone },
@@ -13,22 +13,43 @@ void VecMove::calc()
     m_cameraOpticalFlow.calc();
 
     const cv::Point2f p = m_vecDown.getVecDown();
+
+    if (p.x < 0 || static_cast<int>(p.x) >= m_drone->cameraInfo.resolutionX
+        || p.y < 0 || static_cast<int>(p.y) >= m_drone->cameraInfo.resolutionY)
+    {
+        m_vecMove = p * s_noFlowBalanceVecMultiplier
+            / std::sqrt((m_drone->cameraInfo.resolutionX * m_drone->cameraInfo.resolutionX
+                + m_drone->cameraInfo.resolutionY * m_drone->cameraInfo.resolutionY
+            ));
+        return;
+    }
+
     cv::Point2f meanOpticalFlow{ 0.0f, 0.0f };
 
-    const int xMin = std::max(static_cast<int>(p.x) - 10, 0);
-    const int xMax = std::min(static_cast<int>(p.x) + 10, m_drone->cameraInfo.resolutionX - 1);
-    const int yMin = std::max(static_cast<int>(p.y) - 10, 0);
-    const int yMax = std::min(static_cast<int>(p.y) + 10, m_drone->cameraInfo.resolutionY - 1);
+    const int xMin = std::max(static_cast<int>(p.x) - s_accountFlowPixels, 0);
+    const int xMax = std::min(static_cast<int>(p.x) + s_accountFlowPixels, m_drone->cameraInfo.resolutionX - 1);
+    const int yMin = std::max(static_cast<int>(p.y) - s_accountFlowPixels, 0);
+    const int yMax = std::min(static_cast<int>(p.y) + s_accountFlowPixels, m_drone->cameraInfo.resolutionY - 1);
 
+    int counter = 0;
     for (int x = xMin; x <= xMax; ++x)
     {
         for (int y = yMin; y <= yMax; ++y)
         {
-            meanOpticalFlow += m_cameraOpticalFlow.getOpticalFlowAt(x, y);
+            if (static_cast<long long>(p.x - x) * (p.x - x)
+                + static_cast<long long>(p.y - y) * (p.y - y)
+                <= static_cast<long long>(s_accountFlowPixels) * s_accountFlowPixels)
+            {
+                meanOpticalFlow += m_cameraOpticalFlow.getOpticalFlowAt(x, y);
+                ++counter;
+            }
         }
     }
-    meanOpticalFlow /= std::max((xMax - xMin + 1) * (yMax - yMin + 1), 1);
-    m_vecMove = m_vecDown.getVecDownDisplacement() - meanOpticalFlow;
+
+    meanOpticalFlow /= counter;
+
+    m_vecMove = (m_drone->getAltitude() / m_drone->cameraInfo.focalLength) * (m_vecDown.getVecDownDisplacement() - meanOpticalFlow);
+
     m_hasPrev = true;
 }
 
