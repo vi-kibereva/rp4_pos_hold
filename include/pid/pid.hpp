@@ -62,7 +62,7 @@ private:
   float k_d_ = 0.0f;  ///< Derivative gain
   float k_df_ = 0.0f; ///< Derivative filter coefficient (low-pass filter)
 
-  std::chrono::milliseconds
+  std::chrono::microseconds
       last_time; ///< Timestamp of last calculation for dt computation
 
   float32x2_t last_value_ = {
