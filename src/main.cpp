@@ -147,7 +147,6 @@ int main() {
     // Set camera properties
     cap.set(CAP_PROP_FRAME_WIDTH, 640);
     cap.set(CAP_PROP_FRAME_HEIGHT, 480);
-    cap.set(CAP_PROP_FPS, 30);
 
     // Get actual frame size
     int frame_width = static_cast<int>(cap.get(CAP_PROP_FRAME_WIDTH));
