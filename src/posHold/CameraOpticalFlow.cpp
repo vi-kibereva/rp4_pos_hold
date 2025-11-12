@@ -11,6 +11,8 @@ void CameraOpticalFlow::calc()
 {
     cv::Mat grayFrame = m_drone->getGrayscaleImage();
 
+    cv::imshow(grayFrame);
+
     if (m_prevFrame.empty())
     {
         m_prevFrame = grayFrame.clone();
