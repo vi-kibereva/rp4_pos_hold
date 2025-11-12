@@ -22,11 +22,13 @@ Drone::Drone(msp::Msp& msp) :
     // gyroData[1] - absolute rotation angle (not velocity) around left-right world axis (pitch)
     // gyroData[2] - absolute rotation angle (not velocity) around vertical world axis (yaw)
 
+    std::cout << "start get gyro data\n";
     msp::AttitudeData data = m_msp->attitude();
+    std::cout << "end get gyro data\n";
     return {
-        data.roll_tenths * CV_PI / 180,
-        data.pitch_tenths * CV_PI / 180,
-        data.yaw_tenths * CV_PI / 180
+        data.roll_tenths * CV_PI / 1800,
+        data.pitch_tenths * CV_PI / 1800,
+        data.yaw_tenths * CV_PI / 1800
     };
 }
 
