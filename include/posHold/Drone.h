@@ -44,11 +44,13 @@ public:
 
     const CameraInfo cameraInfo = CameraInfo(
         60 * CV_PI / 180,
-        640,
-        480,
+        1280,
+        720,
         0.01,
         1000.0
     );
+
+    Drone();
 
     explicit Drone(msp::Msp& m_msp);
 

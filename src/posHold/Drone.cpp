@@ -1,5 +1,10 @@
 #include "posHold/Drone.h"
 
+Drone::Drone() :
+    m_camera(0)
+{
+}
+
 Drone::Drone(msp::Msp& msp) :
     m_msp{ &msp },
     m_camera(0)
@@ -22,6 +27,8 @@ Drone::Drone(msp::Msp& msp) :
     // gyroData.pitch - absolute rotation angle (not velocity) around left-right world axis
     // gyroData.yaw - absolute rotation angle (not velocity) around vertical world axis
 
+    return { 0.0, 0.0, 0.0 };
+
     msp::AttitudeData data = m_msp->attitude();
     return {
         data.roll_tenths * CV_PI / 1800,
@@ -32,5 +39,6 @@ Drone::Drone(msp::Msp& msp) :
 
 [[nodiscard]] double Drone::getAltitude()
 {
+    return 1.0;
     return m_msp->altitude().altitude / 100.0;
 }
