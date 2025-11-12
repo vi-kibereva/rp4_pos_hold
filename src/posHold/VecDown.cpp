@@ -40,9 +40,7 @@ cv::Point2f VecDown::getVecDownDisplacement() const
 
 cv::Vec3d VecDown::calcVecDown3d()
 {
-    std::cout << "start get gyro data\n";
     Drone::GyroData gyroData = m_drone->getGyroData();
-    std::cout << "end get gyro data\n";
 
     cv::Vec3f vecDown{ 0.0f, 0.0f, -1.0f };
 
