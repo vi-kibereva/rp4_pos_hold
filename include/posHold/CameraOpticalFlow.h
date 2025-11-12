@@ -9,7 +9,7 @@ class CameraOpticalFlow
 public:
     explicit CameraOpticalFlow(Drone& drone);
 
-    void calc(int x, int y, int len);
+    void calc();
 
     [[nodiscard]] cv::Point2f getOpticalFlowAt(int x, int y) const;
 

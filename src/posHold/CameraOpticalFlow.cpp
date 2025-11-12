@@ -7,7 +7,7 @@ CameraOpticalFlow::CameraOpticalFlow(Drone& drone) :
 {
 }
 
-void CameraOpticalFlow::calc(const int x, const int y, const int len)
+void CameraOpticalFlow::calc()
 {
     cv::Mat grayFrame = m_drone->getGrayscaleImage();
 
