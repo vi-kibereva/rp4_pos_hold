@@ -106,10 +106,17 @@ int main(int argc, char* argv[])
 	{
 		std::cout << "gergerger\n";
 	}
-	cv::Mat frame;
-    camera >> frame;
+	while (true)
+	{
+		cv::Mat frame;
+    	camera >> frame;
+		if (frame.size())
+		{
+			cv::imshow("img", frame);
+		}
+	}
+	
     //cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
-	cv::imshow("img", frame);
 
 	return 0;
 }
