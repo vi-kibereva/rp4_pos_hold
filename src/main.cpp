@@ -196,8 +196,8 @@ int main(int argc, const char** argv)
     cv::Mat frame;
 
     // Create VideoWriter
-    int frame_width = static_cast<int>(cap.get(CAP_PROP_FRAME_WIDTH));
-    int frame_height = static_cast<int>(cap.get(CAP_PROP_FRAME_HEIGHT));
+    int frame_width = static_cast<int>(video.get(CAP_PROP_FRAME_WIDTH));
+    int frame_height = static_cast<int>(video.get(CAP_PROP_FRAME_HEIGHT));
     VideoWriter writer(
         "output.mp4",
         VideoWriter::fourcc('m','p','4','v'),  // MP4
@@ -214,8 +214,8 @@ int main(int argc, const char** argv)
     for (int i = 0; i < 150; ++i) {
 		std::cout << i << '\n';
         // Grab and retrieve frame
-        // cap.grab();
-        // cap.retrieve(frame);
+        // video.grab();
+        // video.retrieve(frame);
         video.read(frame);
         if (frame.empty()) {
             cerr << "Empty frame, exiting..." << endl;
