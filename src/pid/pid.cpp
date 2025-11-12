@@ -5,16 +5,16 @@
 
 PidController::PidController(float k_p, float k_i, float k_d, float k_df)
 		: k_p_(k_p), k_i_(k_i), k_d_(k_d), k_df_(k_df) {
-	last_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+	last_time = std::chrono::duration_cast<std::chrono::microseconds>(
 			std::chrono::steady_clock::now().time_since_epoch());
 }
 
 uint32x2_t PidController::calculate_raw_rc(float32x2_t current_position,
 										   float32x2_t desired_position) {
-	auto current_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+	auto current_time = std::chrono::duration_cast<std::chrono::microseconds>(
 			std::chrono::steady_clock::now().time_since_epoch());
 	float32x2_t error = vsub_f32(desired_position, current_position);
-	float dt_sec = (current_time - last_time).count() / 1000.0f;
+	float dt_sec = (current_time - last_time).count() / 1000000.0f;
 	last_time = current_time;
 
 	// Prevent divide-by-zero
