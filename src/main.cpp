@@ -168,7 +168,8 @@ int main() {
     std::cout << "Recording... Press Ctrl+C to stop." << std::endl;
 
     cv::Mat frame;
-    while (true) {
+    for (int i = 0; i < 150; ++i) {
+		cout << i << '\n';
         cap >> frame;
         if (frame.empty()) {
             std::cerr << "⚠️  Empty frame, exiting..." << std::endl;
@@ -176,8 +177,6 @@ int main() {
         }
 
         writer.write(frame);
-
-        if (cv::waitKey(1) == 27) break;
     }
 
     cap.release();
