@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
 	{
 		cv::Mat frame;
     	camera >> frame;
-		if (frame.size() != 0)
+		if (!frame.empty())
 		{
 			cv::imshow("img", frame);
 		}
