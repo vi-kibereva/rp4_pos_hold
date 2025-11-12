@@ -177,13 +177,11 @@ int main() {
 
         writer.write(frame);
 
-        // Optional preview (skip on headless Pi)
-        // cv::imshow("Recording", frame);
-        // if (cv::waitKey(1) == 27) break; // ESC to stop
+        if (cv::waitKey(1) == 27) break;
     }
 
     cap.release();
     writer.release();
-    std::cout << "✅ Video saved as output.mp4" << std::endl;
+    std::cout << "Video saved as output.mp4" << std::endl;
     return 0;
 }
