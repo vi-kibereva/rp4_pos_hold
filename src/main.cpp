@@ -138,7 +138,7 @@ int main() {
     using namespace cv;
 
     // Open the Pi Camera using the V4L2 backend
-    cv::VideoCapture cap(0, cv::CAP_V4L2);
+    cv::VideoCapture cap(2, cv::CAP_V4L2);
     if (!cap.isOpened()) {
         cerr << "Error: Could not open Pi camera. Make sure libcamera is installed and the camera is enabled." << endl;
         return -1;
