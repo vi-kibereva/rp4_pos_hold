@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
 
     cv::VideoCapture camera(pipeline, cv::CAP_GSTREAMER);
     if (!camera.isOpened()) {
-        std::cerr << "❌ Failed to open camera pipeline\n";
+        std::cerr << "Failed to open camera pipeline\n";
         return 1;
     }
 
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
     while (true) {
         cv::Mat frame;
         if (!camera.read(frame)) {
-            std::cerr << "⚠️ Failed to grab frame\n";
+            std::cerr << "Failed to grab frame\n";
             continue;
         }
 
