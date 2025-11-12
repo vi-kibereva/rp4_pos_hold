@@ -145,7 +145,7 @@ int main() {
     // Optional: set resolution and FPS
     cap.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
-    cap.set(cv::CAP_PROP_FPS, 30);
+    // cap.set(cv::CAP_PROP_FPS, 30);
 
     // Get the frame size
     int frame_width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
@@ -172,7 +172,7 @@ int main() {
 		std::cout << i << '\n';
         cap >> frame;
         if (frame.empty()) {
-            std::cerr << "⚠️  Empty frame, exiting..." << std::endl;
+            std::cerr << "Empty frame, exiting..." << std::endl;
             break;
         }
 
