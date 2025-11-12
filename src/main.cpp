@@ -107,17 +107,17 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    // Optionally set resolution
-    // cap.set(cv::CAP_PROP_FPS, 30);
+    cap.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
+    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
 
-    cv::Mat frame, gray;
+    cv::Mat frame;
 
     while (true) {
         cap >> frame; // Capture a frame
         if (frame.empty()) continue;
 
         // Convert to grayscale
-        cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+        cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
 
 		std::cout << frame.size() << '\n';
 
