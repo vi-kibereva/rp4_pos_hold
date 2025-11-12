@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
     }
 
     // Optionally set resolution
-    cap.set(cv::CAP_PROP_FPS, 30);
+    // cap.set(cv::CAP_PROP_FPS, 30);
 
     cv::Mat frame, gray;
 
