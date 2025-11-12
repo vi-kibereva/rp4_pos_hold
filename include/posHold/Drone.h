@@ -60,7 +60,7 @@ public:
 
 private:
     msp::Msp* m_msp;
-    VideoCapture m_camera;
+    cv::VideoCapture m_camera;
 };
 
 #endif
