@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
 	cv::VideoCapture camera(0);
 	cv::Mat frame;
     camera >> frame;
-    cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
+    //cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
 	cv::imshow("img", frame);
 
 	return 0;
