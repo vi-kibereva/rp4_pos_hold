@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
 	}*/
 
 	cv::VideoCapture camera(0);
-	if (!cap.isOpened())
+	if (!camera.isOpened())
 	{
 		std::cout << "gergerger\n";
 	}
