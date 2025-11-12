@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}*/
 
-	cv::VideoCapture cap("/dev/video0", cv::CAP_V4L2);
+	cv::VideoCapture cap(0);
     if (!cap.isOpened()) {
         std::cerr << "Failed to open camera" << std::endl;
         return -1;
