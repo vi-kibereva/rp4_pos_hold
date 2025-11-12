@@ -1,21 +1,17 @@
 #include "posHold/Drone.h"
 
 Drone::Drone(msp::Msp& msp) :
-    m_msp{ &msp }
+    m_msp{ &msp },
+    m_camera(0)
 {
 }
 
 [[nodiscard]] cv::Mat Drone::getGrayscaleImage() const
 {
-    // get camera grayscale image
-    /*std::vector<std::uint8_t> imgBytes = std::get<0>(m_sim->getVisionSensorImg(m_visionSensor));
-    cv::Mat frame(
-        m_cameraFrameSize.second,
-        m_cameraFrameSize.first,
-        CV_8UC3, imgBytes.data());
+    cv::Mat frame;
+    m_camera >> frame;
     cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
-    cv::flip(frame, frame, 0);
-    return frame;*/
+    return frame;
 }
 
 [[nodiscard]] Drone::GyroData Drone::getGyroData() const
