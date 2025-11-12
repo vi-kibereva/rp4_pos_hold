@@ -10,12 +10,10 @@ AttitudeData Msp::attitude() {
 	std::uint8_t payload[EXPECTED_SIZE];
 	std::uint8_t recv_size = 0;
 
-    std::cout << "start get gyro data\n";
 	if (!bitaflught_msp_.request(MSP_ATTITUDE, payload, EXPECTED_SIZE,
 															 &recv_size)) {
 		throw std::runtime_error("MSP_ATTITUDE request failed or timed out");
 	}
-	std::cout << "end get gyro data\n";
 
 	return AttitudeData(recv_size, payload);
 }
