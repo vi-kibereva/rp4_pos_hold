@@ -42,8 +42,6 @@ public:
         double yaw;
     };
 
-    constexpr static std::uint64_t s_propellersCount = 4;
-
     const CameraInfo cameraInfo = CameraInfo(
         CV_PI / 2,
         512,
@@ -62,6 +60,7 @@ public:
 
 private:
     msp::Msp* m_msp;
+    VideoCapture m_camera;
 };
 
 #endif
