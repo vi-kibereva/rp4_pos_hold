@@ -120,8 +120,8 @@ int main(int argc, char* argv[])
             continue;
         }
 
+		std::cout << "qwerty\n";
         cv::imshow("img", frame);
-
         if (cv::waitKey(1) == 27) // ESC to exit
             break;
     }
