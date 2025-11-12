@@ -1,4 +1,4 @@
-#include <opencv4/opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
 
 #include "posHold/CameraOpticalFlow.h"
 
@@ -11,7 +11,7 @@ void CameraOpticalFlow::calc()
 {
     cv::Mat grayFrame = m_drone->getGrayscaleImage();
 
-    cv::imshow(grayFrame);
+    cv::imshow("img", grayFrame);
 
     if (m_prevFrame.empty())
     {
