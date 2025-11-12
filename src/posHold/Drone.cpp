@@ -4,6 +4,8 @@ Drone::Drone(msp::Msp& msp) :
     m_msp{ &msp },
     m_camera(0)
 {
+    m_camera.set(cv::CAP_PROP_FRAME_WIDTH, cameraInfo.resolutionX);
+    m_camera.set(cv::CAP_PROP_FRAME_HEIGHT, cameraInfo.resolutionY);
 }
 
 [[nodiscard]] cv::Mat Drone::getGrayscaleImage()
