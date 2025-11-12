@@ -64,126 +64,117 @@
 // 		return 1;
 // 	}*/
 
-// 	if (argc < 2)
-// 	{
-// 		std::cerr << "Usage: " << argv[0] << " /dev/ttyUSB0\n";
-// 		return 2;
-// 	}
+// 	// if (argc < 2)
+// 	// {
+// 	// 	std::cerr << "Usage: " << argv[0] << " /dev/ttyUSB0\n";
+// 	// 	return 2;
+// 	// }
 
-// 	const char *port = argv[1];
+// 	// const char *port = argv[1];
 
-// 	try
-// 	{
-// 		// msp::Msp msp(port, B115200, 10);
+// 	// try
+// 	// {
+// 	// 	// msp::Msp msp(port, B115200, 10);
 
-// 		// Drone drone(msp);
+// 	// 	// Drone drone(msp);
 
-// 		Drone drone{};
+// 	// 	Drone drone{};
 
-// 		VecMove vecMove(drone);
+// 	// 	VecMove vecMove(drone);
 
-// 		PidController controller(1.0f, 0.0f, 0.0f, 0.0f);
+// 	// 	PidController controller(1.0f, 0.0f, 0.0f, 0.0f);
 
-// 		auto t1 = std::chrono::high_resolution_clock::now();
+// 	// 	auto t1 = std::chrono::high_resolution_clock::now();
 
-// 		while (true)
-// 		{
-// 			vecMove.calc();
-// 			auto t2 = std::chrono::high_resolution_clock::now();
-// 			cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
-// 			t1 = t2;
-// 			std::cout << cvVecMove << '\n';
-// 			/*uint32x2_t result = controller.calculate_raw_rc(
-// 				vdup_n_f32(0.0f),
-// 				float32x2_t{ cvVecMove.x, cvVecMove.y }
-// 			);
-// 			msp.setRawRc(msp::SetRawRcData(result[0], result[1], 0, 0));*/
-// 		}
-// 	}
-// 	catch (const std::exception& e)
-// 	{
-// 		std::cerr << "Error: " << e.what() << '\n';
-// 		return 1;
-// 	}
+// 	// 	while (true)
+// 	// 	{
+// 	// 		vecMove.calc();
+// 	// 		auto t2 = std::chrono::high_resolution_clock::now();
+// 	// 		cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
+// 	// 		t1 = t2;
+// 	// 		std::cout << cvVecMove << '\n';
+// 	// 		/*uint32x2_t result = controller.calculate_raw_rc(
+// 	// 			vdup_n_f32(0.0f),
+// 	// 			float32x2_t{ cvVecMove.x, cvVecMove.y }
+// 	// 		);
+// 	// 		msp.setRawRc(msp::SetRawRcData(result[0], result[1], 0, 0));*/
+// 	// 	}
+// 	// }
+// 	// catch (const std::exception& e)
+// 	// {
+// 	// 	std::cerr << "Error: " << e.what() << '\n';
+// 	// 	return 1;
+// 	// }
 
-// 	// cv::VideoCapture cap(0);
-//     // if (!cap.isOpened()) {
-//     //     std::cerr << "Failed to open camera" << std::endl;
-//     //     return -1;
-//     // }
+// 	cv::VideoCapture cap(0);
+//     if (!cap.isOpened()) {
+//         std::cerr << "Failed to open camera" << std::endl;
+//         return -1;
+//     }
 
-//     // cap.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
-//     // cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
+//     cap.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
+//     cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
 
-//     // cv::Mat frame;
+//     cv::Mat frame;
 
-//     // while (true) {
-//     //     cap >> frame; // Capture a frame
+//     while (true) {
+//         cap >> frame; // Capture a frame
 
-//     //     // Convert to grayscale
-//     //     cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
+//         // Convert to grayscale
+//         cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
 
-// 	// 	std::cout << frame.size() << '\n';
+// 		std::cout << frame.size() << '\n';
 
-//     //     // Exit on ESC key
-//     //     if (cv::waitKey(1) == 27) break;
-//     // }
+//         // Exit on ESC key
+//         if (cv::waitKey(1) == 27) break;
+//     }
 // }
 
-#include <iostream>
 #include <opencv2/opencv.hpp>
-#include <raspicam/raspicam_cv.h>
+#include <iostream>
 
-int main()
-{
+int main() {
     using namespace std;
     using namespace cv;
 
-    // Create camera object
-    raspicam::RaspiCam_Cv cap;
-
-    // Set camera properties if needed
-    cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-    cap.set(cv::CAP_PROP_FPS, 30);
-
-    // Open camera
-    if (!cap.open()) {
-        cerr << "Could not initialize capturing..." << endl;
+    // Open the Pi Camera using the V4L2 backend
+    cv::VideoCapture cap(0, cv::CAP_V4L2);
+    if (!cap.isOpened()) {
+        cerr << "Error: Could not open Pi camera. Make sure libcamera is installed and the camera is enabled." << endl;
         return -1;
     }
 
-    cout << "Camera opened successfully!" << endl;
+    // Set camera properties
+    cap.set(CAP_PROP_FRAME_WIDTH, 640);
+    cap.set(CAP_PROP_FRAME_HEIGHT, 480);
+    cap.set(CAP_PROP_FPS, 30);
 
-    // Create VideoWriter
+    // Get actual frame size
     int frame_width = static_cast<int>(cap.get(CAP_PROP_FRAME_WIDTH));
     int frame_height = static_cast<int>(cap.get(CAP_PROP_FRAME_HEIGHT));
+
+    // Create VideoWriter to save the video
     VideoWriter writer(
-        "output.mp4",
-        VideoWriter::fourcc('m','p','4','v'),  // MP4
-        30.0,
-        Size(frame_width, frame_height)
+        "output.mp4",                     // output file
+        VideoWriter::fourcc('m','p','4','v'), // codec
+        30.0,                             // fps
+        Size(frame_width, frame_height)   // frame size
     );
     if (!writer.isOpened()) {
-        cerr << "Could not open output file for write" << endl;
+        cerr << "Error: Could not open output file for writing" << endl;
         return -1;
     }
 
-    cout << "Recording... Press ESC to stop." << endl;
-
-    Mat frame;
-    for (int i = 0; i < 150; ++i) {
+    cv::Mat frame;
+    for (int i = 0; i < 150; ++i)
+	{
 		std::cout << i << '\n';
-        // Grab and retrieve frame
-        cap.grab();
-        cap.retrieve(frame);
-
+        cap >> frame;
         if (frame.empty()) {
             cerr << "Empty frame, exiting..." << endl;
             break;
         }
 
-        // Write frame to video
         writer.write(frame);
     }
 
