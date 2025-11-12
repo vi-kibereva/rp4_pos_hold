@@ -18,9 +18,9 @@ Drone::Drone(msp::Msp& msp) :
 
 [[nodiscard]] Drone::GyroData Drone::getGyroData()
 {
-    // gyroData[0] - absolute rotation angle (not velocity) around horizontal forward-backward world axis (roll)
-    // gyroData[1] - absolute rotation angle (not velocity) around left-right world axis (pitch)
-    // gyroData[2] - absolute rotation angle (not velocity) around vertical world axis (yaw)
+    // gyroData.roll - absolute rotation angle (not velocity) around horizontal forward-backward world axis
+    // gyroData.pitch - absolute rotation angle (not velocity) around left-right world axis
+    // gyroData.yaw - absolute rotation angle (not velocity) around vertical world axis
 
     std::cout << "start get gyro data\n";
     msp::AttitudeData data = m_msp->attitude();
