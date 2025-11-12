@@ -130,57 +130,67 @@
 //     // }
 // }
 
-#include <opencv2/opencv.hpp>
 #include <iostream>
+#include <opencv2/opencv.hpp>
+#include <raspicam/raspicam_cv.h>
 
-int main() {
-    // Open default camera (0 = /dev/video0)
-    cv::VideoCapture cap(cv::CAP_ANY);
+int main()
+{
+    using namespace std;
+    using namespace cv;
 
-    if (!cap.isOpened()) {
-        std::cerr << "Error: Could not open camera" << std::endl;
-        return -1;
-    }
+    // Create camera object
+    raspicam::RaspiCam_Cv cap;
 
-    // Optional: set resolution and FPS
+    // Set camera properties if needed
     cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-    // cap.set(cv::CAP_PROP_FPS, 30);
+    cap.set(cv::CAP_PROP_FPS, 30);
 
-    // Get the frame size
-    int frame_width = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
-    int frame_height = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
-
-    // Define the codec and create VideoWriter
-    // Use 'mp4v' for MP4, or 'XVID'/'MJPG' for AVI
-    cv::VideoWriter writer(
-        "output.mp4",
-        cv::VideoWriter::fourcc('m','p','4','v'),
-        30.0,
-        cv::Size(frame_width, frame_height)
-    );
-
-    if (!writer.isOpened()) {
-        std::cerr << "Error: Could not open output file for write" << std::endl;
+    // Open camera
+    if (!cap.open()) {
+        cerr << "Could not initialize capturing..." << endl;
         return -1;
     }
 
-    std::cout << "Recording... Press Ctrl+C to stop." << std::endl;
+    cout << "Camera opened successfully!" << endl;
 
-    cv::Mat frame;
+    // Create VideoWriter
+    int frame_width = static_cast<int>(cap.get(CAP_PROP_FRAME_WIDTH));
+    int frame_height = static_cast<int>(cap.get(CAP_PROP_FRAME_HEIGHT));
+    VideoWriter writer(
+        "output.mp4",
+        VideoWriter::fourcc('m','p','4','v'),  // MP4
+        30.0,
+        Size(frame_width, frame_height)
+    );
+    if (!writer.isOpened()) {
+        cerr << "Could not open output file for write" << endl;
+        return -1;
+    }
+
+    cout << "Recording... Press ESC to stop." << endl;
+
+    Mat frame;
     for (int i = 0; i < 150; ++i) {
 		std::cout << i << '\n';
-        cap >> frame;
+        // Grab and retrieve frame
+        cap.grab();
+        cap.retrieve(frame);
+
         if (frame.empty()) {
-            std::cerr << "Empty frame, exiting..." << std::endl;
+            cerr << "Empty frame, exiting..." << endl;
             break;
         }
 
+        // Write frame to video
         writer.write(frame);
     }
 
     cap.release();
     writer.release();
-    std::cout << "Video saved as output.mp4" << std::endl;
+    destroyAllWindows();
+
+    cout << "Video saved as output.mp4" << endl;
     return 0;
 }
