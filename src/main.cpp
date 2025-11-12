@@ -11,7 +11,7 @@
 
 int main(int argc, char* argv[])
 {
-	/*if (argc < 2) {
+	if (argc < 2) {
 		std::cerr << "Usage: " << argv[0] << " /dev/ttyUSB0\n";
 		return 2;
 	}
@@ -60,9 +60,9 @@ int main(int argc, char* argv[])
 	} catch (const std::exception &ex) {
 		std::cerr << "Error: " << ex.what() << '\n';
 		return 1;
-	}*/
+	}
 
-	if (argc < 2)
+	/*if (argc < 2)
 	{
 		std::cerr << "Usage: " << argv[0] << " /dev/ttyUSB0\n";
 		return 2;
@@ -72,17 +72,13 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		std::cout << "1\n";
 		msp::Msp msp(port, B115200, 10);
 
 		Drone drone(msp);
-		std::cout << "1.25\n";
 
 		VecMove vecMove(drone);
-		std::cout << "1.375\n";
 
 		PidController controller(1.0f, 0.0f, 0.0f, 0.0f);
-		std::cout << "1.5\n";
 
 		auto t1 = std::chrono::high_resolution_clock::now();
 
@@ -95,18 +91,18 @@ int main(int argc, char* argv[])
 			cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
 			t1 = t2;
 			std::cout << cvVecMove << '\n';
-			/*uint32x2_t result = controller.calculate_raw_rc(
+			uint32x2_t result = controller.calculate_raw_rc(
 				vdup_n_f32(0.0f),
 				float32x2_t{ cvVecMove.x, cvVecMove.y }
 			);
-			msp.setRawRc(msp::SetRawRcData(result[0], result[1], 0, 0));*/
+			msp.setRawRc(msp::SetRawRcData(result[0], result[1], 0, 0));
 		}
 	}
 	catch (const std::exception& e)
 	{
 		std::cerr << "Error: " << e.what() << '\n';
 		return 1;
-	}
+	}*/
 
 	// cv::VideoCapture cap(0);
     // if (!cap.isOpened()) {
