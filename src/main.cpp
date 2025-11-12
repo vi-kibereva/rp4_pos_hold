@@ -169,7 +169,7 @@ int main() {
 
     cv::Mat frame;
     for (int i = 0; i < 150; ++i) {
-		cout << i << '\n';
+		std::cout << i << '\n';
         cap >> frame;
         if (frame.empty()) {
             std::cerr << "⚠️  Empty frame, exiting..." << std::endl;
