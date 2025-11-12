@@ -252,15 +252,13 @@
 
 //     return 0;
 // }
-
 #include <iostream>
 #include <opencv2/opencv.hpp>
-#include <thread>
-#include <chrono>
+#include <sstream>
 
 #define DISPLAY_WIDTH 640
 #define DISPLAY_HEIGHT 480
-#define CAMERA_FRAMERATE 21
+#define CAMERA_FRAMERATE 30
 
 void DisplayVersion()
 {
@@ -275,51 +273,78 @@ int main(int argc, const char** argv)
 
     DisplayVersion();
 
-    std::cout << "Opening camera..." << std::endl;
-    cv::VideoCapture video(0, CAP_V4L2);
+    // METHOD 1: GStreamer pipeline with libcamera (RECOMMENDED for modern Pi OS)
+    std::stringstream pipeline;
+    pipeline << "libcamerasrc ! "
+             << "video/x-raw,width=" << DISPLAY_WIDTH
+             << ",height=" << DISPLAY_HEIGHT
+             << ",framerate=" << CAMERA_FRAMERATE << "/1 ! "
+             << "videoconvert ! "
+             << "appsink";
+
+    std::cout << "Opening camera with GStreamer pipeline..." << std::endl;
+    std::cout << "Pipeline: " << pipeline.str() << std::endl;
+
+    cv::VideoCapture video(pipeline.str(), CAP_GSTREAMER);
+
+    // METHOD 2: Try V4L2 as fallback
+    if (!video.isOpened()) {
+        std::cout << "GStreamer failed, trying V4L2 on /dev/video0..." << std::endl;
+        video.open(0, CAP_V4L2);
+    }
 
     if (!video.isOpened())
     {
         std::cerr << "Unable to open camera!" << std::endl;
+        std::cerr << "\nTroubleshooting:" << std::endl;
+        std::cerr << "1. Check camera: libcamera-hello --list-cameras" << std::endl;
+        std::cerr << "2. Install GStreamer: sudo apt-get install libgstreamer1.0-dev" << std::endl;
+        std::cerr << "3. Enable legacy camera: sudo raspi-config -> Interface -> Legacy Camera" << std::endl;
         return -1;
     }
 
     std::cout << "Camera opened successfully!" << std::endl;
 
-    // Set camera properties
-    video.set(CAP_PROP_FRAME_WIDTH, DISPLAY_WIDTH);
-    video.set(CAP_PROP_FRAME_HEIGHT, DISPLAY_HEIGHT);
-    video.set(CAP_PROP_FPS, CAMERA_FRAMERATE);
-
-    // Optional: Set buffer size to reduce latency
-    video.set(CAP_PROP_BUFFERSIZE, 1);
-
-    // Verify actual camera settings
+    // Get actual camera settings
     int frame_width = static_cast<int>(video.get(CAP_PROP_FRAME_WIDTH));
     int frame_height = static_cast<int>(video.get(CAP_PROP_FRAME_HEIGHT));
     double fps = video.get(CAP_PROP_FPS);
+
+    if (fps <= 0) fps = CAMERA_FRAMERATE;  // Use default if detection fails
 
     std::cout << "Camera settings:" << std::endl;
     std::cout << "  Resolution: " << frame_width << "x" << frame_height << std::endl;
     std::cout << "  FPS: " << fps << std::endl;
 
-    // CRITICAL: Warm up the camera by discarding first frames
-    std::cout << "Warming up camera (discarding first 30 frames)..." << std::endl;
+    // Warm up camera - discard first frames
+    std::cout << "Warming up camera..." << std::endl;
     cv::Mat dummy_frame;
     for (int i = 0; i < 30; ++i) {
         video >> dummy_frame;
-        if (dummy_frame.empty()) {
-            std::cout << "  Frame " << i << " empty, continuing..." << std::endl;
+        if (!dummy_frame.empty()) {
+            std::cout << "  Warm-up frame " << i << ": "
+                     << dummy_frame.cols << "x" << dummy_frame.rows << std::endl;
+            break;  // Got valid frame, camera is ready
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    std::cout << "Camera warm-up complete!" << std::endl;
+
+    if (dummy_frame.empty()) {
+        std::cerr << "Failed to get valid frames during warm-up!" << std::endl;
+        return -1;
+    }
+
+    // Use actual frame dimensions for video writer
+    frame_width = dummy_frame.cols;
+    frame_height = dummy_frame.rows;
+
+    std::cout << "Camera ready! Actual frame size: "
+              << frame_width << "x" << frame_height << std::endl;
 
     // Create VideoWriter
     VideoWriter writer(
         "output.mp4",
         VideoWriter::fourcc('m','p','4','v'),
-        fps > 0 ? fps : 30.0,  // Use detected FPS or default to 30
+        fps,
         Size(frame_width, frame_height)
     );
 
@@ -328,32 +353,24 @@ int main(int argc, const char** argv)
         return -1;
     }
 
-    cout << "\nRecording 150 frames... Press ESC to stop early." << endl;
+    cout << "\nRecording 150 frames..." << endl;
 
     cv::Mat frame;
     int frames_written = 0;
     int frames_failed = 0;
 
     for (int i = 0; i < 150; ++i) {
-        // Read frame with error checking
+        // Read frame
         bool success = video.read(frame);
 
         if (!success || frame.empty()) {
             cerr << "Failed to capture frame " << i << endl;
             frames_failed++;
 
-            // Try to continue for a few failures
             if (frames_failed > 10) {
                 cerr << "Too many failures, stopping..." << endl;
                 break;
             }
-            continue;
-        }
-
-        // Verify frame has data
-        if (frame.rows == 0 || frame.cols == 0) {
-            cerr << "Frame " << i << " has zero dimensions" << endl;
-            frames_failed++;
             continue;
         }
 
@@ -362,14 +379,10 @@ int main(int argc, const char** argv)
         frames_written++;
 
         // Progress indicator
-        if (i % 10 == 0) {
-            std::cout << "Frame " << i << " captured ("
-                     << frame.cols << "x" << frame.rows << ")" << std::endl;
+        if (i % 30 == 0) {
+            std::cout << "Frame " << i << "/" << 150
+                     << " (" << frame.cols << "x" << frame.rows << ")" << std::endl;
         }
-
-        // Optional: Display frame (comment out if headless)
-        // cv::imshow("Recording", frame);
-        // if (cv::waitKey(1) == 27) break;  // ESC to exit
     }
 
     // Release resources
