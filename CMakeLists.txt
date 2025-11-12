@@ -42,8 +42,13 @@ endif()
 # Include headers
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+#OpenCV
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+
 # Collect all .cpp files in src/
 file(GLOB_RECURSE ALL_SRC "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
 # --- First executable: rp4_pos_hold1 ---
 add_executable(rp4_pos_hold1 ${ALL_SRC})
+target_link_libraries(rp4_pos_hold1 ${OpenCV_LIBS})
