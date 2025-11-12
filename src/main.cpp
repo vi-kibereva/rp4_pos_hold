@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}*/
 
-	cv::VideoCapture camera(0);
+	cv::VideoCapture camera("/dev/video0");
 	if (!camera.isOpened())
 	{
 		std::cout << "gergerger\n";
