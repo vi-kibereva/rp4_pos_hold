@@ -130,13 +130,13 @@
 //     // }
 // }
 
-#include <iostream>
-#include <opencv2/opencv.hpp>
+// #include <iostream>
+// #include <opencv2/opencv.hpp>
 
 
-#include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui.hpp>
+// #include <opencv2/core.hpp>
+// #include <opencv2/imgcodecs.hpp>
+// #include <opencv2/highgui.hpp>
 
 
 
@@ -180,9 +180,15 @@ int main(int argc, const char** argv)
     //", height=" << DISPLAY_HEIGHT <<
     //", format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
 
-    cv::VideoCapture video;
+    std::cout << "Before video.open()!" << std::endl;
+    cv::VideoCapture video(0, CAP_V4L2);
 
-    video.open(ss.str());
+    // video.open(ss.str());
+    std::cout << "After video.open()!" << std::endl;
+    // Set camera properties
+    cap.set(CAP_PROP_FRAME_WIDTH, DISPLAY_WIDTH);
+    cap.set(CAP_PROP_FRAME_HEIGHT, DISPLAY_HEIGHT);
+    cap.set(CAP_PROP_FPS, CAMERA_FRAMERATE);
 
     if (!video.isOpened())
     {
@@ -232,19 +238,19 @@ int main(int argc, const char** argv)
     cout << "Video saved as output.mp4" << endl;
     return 0;
 
-//     while (video.read(frame))
-//     {
-//         cv::imshow("Video feed", frame);
+    while (video.read(frame))
+    {
+        cv::imshow("Video feed", frame);
 
-//         if (cv::waitKey(25) >= 0)
-//         {
-//             break;
-//         }
-//    }
+        if (cv::waitKey(25) >= 0)
+        {
+            break;
+        }
+   }
 
-//     std::cout << "Finished!" << std::endl;
+    std::cout << "Finished!" << std::endl;
 
-//     return 0;
+    return 0;
 }
 
 
