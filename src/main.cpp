@@ -186,9 +186,9 @@ int main(int argc, const char** argv)
     // video.open(ss.str());
     std::cout << "After video.open()!" << std::endl;
     // Set camera properties
-    cap.set(CAP_PROP_FRAME_WIDTH, DISPLAY_WIDTH);
-    cap.set(CAP_PROP_FRAME_HEIGHT, DISPLAY_HEIGHT);
-    cap.set(CAP_PROP_FPS, CAMERA_FRAMERATE);
+    video.set(CAP_PROP_FRAME_WIDTH, DISPLAY_WIDTH);
+    video.set(CAP_PROP_FRAME_HEIGHT, DISPLAY_HEIGHT);
+    video.set(CAP_PROP_FPS, CAMERA_FRAMERATE);
 
     if (!video.isOpened())
     {
