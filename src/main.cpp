@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
 
 		VecMove vecMove(drone);
 
-		PidController controller{};
+		PidController controller(1.0f, 0.0f, 0.0f, 0.0f);
 
 		auto t1 = std::chrono::high_resolution_clock::now();
 
