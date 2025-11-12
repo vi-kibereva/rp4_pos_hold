@@ -90,6 +90,7 @@ int main(int argc, char* argv[])
 		{
 			std::cout << "2\n";
 			vecMove.calc();
+			std::cout << "3\n";
 			auto t2 = std::chrono::high_resolution_clock::now();
 			cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
 			t1 = t2;
