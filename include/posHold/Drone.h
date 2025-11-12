@@ -52,11 +52,11 @@ public:
 
     explicit Drone(msp::Msp& m_msp);
 
-    [[nodiscard]] cv::Mat getGrayscaleImage() const;
+    [[nodiscard]] cv::Mat getGrayscaleImage();
 
-    [[nodiscard]] GyroData getGyroData() const;
+    [[nodiscard]] GyroData getGyroData();
 
-    [[nodiscard]] double getAltitude() const;
+    [[nodiscard]] double getAltitude();
 
 private:
     msp::Msp* m_msp;

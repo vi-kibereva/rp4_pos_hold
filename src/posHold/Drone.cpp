@@ -6,7 +6,7 @@ Drone::Drone(msp::Msp& msp) :
 {
 }
 
-[[nodiscard]] cv::Mat Drone::getGrayscaleImage() const
+[[nodiscard]] cv::Mat Drone::getGrayscaleImage()
 {
     cv::Mat frame;
     m_camera >> frame;
@@ -14,7 +14,7 @@ Drone::Drone(msp::Msp& msp) :
     return frame;
 }
 
-[[nodiscard]] Drone::GyroData Drone::getGyroData() const
+[[nodiscard]] Drone::GyroData Drone::getGyroData()
 {
     // gyroData[0] - absolute rotation angle (not velocity) around horizontal forward-backward world axis (roll)
     // gyroData[1] - absolute rotation angle (not velocity) around left-right world axis (pitch)
@@ -28,7 +28,7 @@ Drone::Drone(msp::Msp& msp) :
     };
 }
 
-[[nodiscard]] double Drone::getAltitude() const
+[[nodiscard]] double Drone::getAltitude()
 {
     return m_msp->altitude().altitude / 100.0;
 }
