@@ -130,129 +130,260 @@
 //     // }
 // }
 
+// #include <iostream>
+// #include <opencv2/opencv.hpp>
+
+
+// #include <opencv2/core.hpp>
+// #include <opencv2/imgcodecs.hpp>
+// #include <opencv2/highgui.hpp>
+
+
+
+
+// #include <new>
+// #include <string>
+// #include <sstream>
+
+// #define INPUT_WIDTH 3264
+// #define INPUT_HEIGHT 2464
+
+// #define DISPLAY_WIDTH 640
+// #define DISPLAY_HEIGHT 480
+
+// #define CAMERA_FRAMERATE 21/1
+// #define FLIP 2
+
+// void DisplayVersion()
+// {
+//     std::cout << "OpenCV version: " << cv::getVersionMajor() << "." << cv::getVersionMinor() << "." << cv::getVersionRevision() << std::endl;
+// }
+
+
+// int main(int argc, const char** argv)
+// {
+
+//     using namespace std;
+//     using namespace cv;
+
+//     DisplayVersion();
+
+//     std::stringstream ss;
+
+//     ss << "nvarguscamerasrc !  video/x-raw(memory:NVMM), width=3264, height=2464, format=NV12, framerate=21/1 ! nvvidconv flip-method=2 ! video/x-raw, width=480, height=680, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
+
+//     //ss << "nvarguscamerasrc !  video/x-raw(memory:NVMM), width=" << INPUT_WIDTH <<
+//     //", height=" << INPUT_HEIGHT <<
+//     //", format=NV12, framerate=" << CAMERA_FRAMERATE <<
+//     //" ! nvvidconv flip-method=" << FLIP <<
+//     //" ! video/x-raw, width=" << DISPLAY_WIDTH <<
+//     //", height=" << DISPLAY_HEIGHT <<
+//     //", format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
+
+//     std::cout << "Before video.open()!" << std::endl;
+//     cv::VideoCapture video(0, CAP_V4L2);
+
+//     // video.open(ss.str());
+//     std::cout << "After video.open()!" << std::endl;
+//     // Set camera properties
+//     video.set(CAP_PROP_FRAME_WIDTH, DISPLAY_WIDTH);
+//     video.set(CAP_PROP_FRAME_HEIGHT, DISPLAY_HEIGHT);
+//     video.set(CAP_PROP_FPS, CAMERA_FRAMERATE);
+
+//     if (!video.isOpened())
+//     {
+//         std::cout << "Unable to get video from the camera!" << std::endl;
+
+//         return -1;
+//     }
+
+//     std::cout << "Got here!" << std::endl;
+
+//     cv::Mat frame;
+
+//     // Create VideoWriter
+//     int frame_width = static_cast<int>(video.get(CAP_PROP_FRAME_WIDTH));
+//     int frame_height = static_cast<int>(video.get(CAP_PROP_FRAME_HEIGHT));
+//     VideoWriter writer(
+//         "output.mp4",
+//         VideoWriter::fourcc('m','p','4','v'),  // MP4
+//         30.0,
+//         Size(frame_width, frame_height)
+//     );
+//     if (!writer.isOpened()) {
+//         cerr << "Could not open output file for write" << endl;
+//         return -1;
+//     }
+
+//     cout << "Recording... Press ESC to stop." << endl;
+
+//     for (int i = 0; i < 150; ++i) {
+// 		std::cout << i << '\n';
+//         // Grab and retrieve frame
+//         // video.grab();
+//         // video.retrieve(frame);
+//         video.read(frame);
+//         if (frame.empty()) {
+//             cerr << "Empty frame, exiting..." << endl;
+//             break;
+//         }
+
+//         // Write frame to video
+//         writer.write(frame);
+//     }
+//     // video.release()
+//     writer.release();
+//     destroyAllWindows();
+
+//     cout << "Video saved as output.mp4" << endl;
+//     return 0;
+
+//     while (video.read(frame))
+//     {
+//         cv::imshow("Video feed", frame);
+
+//         if (cv::waitKey(25) >= 0)
+//         {
+//             break;
+//         }
+//    }
+
+//     std::cout << "Finished!" << std::endl;
+
+//     return 0;
+// }
+
 #include <iostream>
 #include <opencv2/opencv.hpp>
-
-
-#include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui.hpp>
-
-
-
-
-#include <new>
-#include <string>
-#include <sstream>
-
-#define INPUT_WIDTH 3264
-#define INPUT_HEIGHT 2464
+#include <thread>
+#include <chrono>
 
 #define DISPLAY_WIDTH 640
 #define DISPLAY_HEIGHT 480
-
-#define CAMERA_FRAMERATE 21/1
-#define FLIP 2
+#define CAMERA_FRAMERATE 21
 
 void DisplayVersion()
 {
-    std::cout << "OpenCV version: " << cv::getVersionMajor() << "." << cv::getVersionMinor() << "." << cv::getVersionRevision() << std::endl;
+    std::cout << "OpenCV version: " << cv::getVersionMajor() << "."
+              << cv::getVersionMinor() << "." << cv::getVersionRevision() << std::endl;
 }
-
 
 int main(int argc, const char** argv)
 {
-
     using namespace std;
     using namespace cv;
 
     DisplayVersion();
 
-    std::stringstream ss;
-
-    ss << "nvarguscamerasrc !  video/x-raw(memory:NVMM), width=3264, height=2464, format=NV12, framerate=21/1 ! nvvidconv flip-method=2 ! video/x-raw, width=480, height=680, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
-
-    //ss << "nvarguscamerasrc !  video/x-raw(memory:NVMM), width=" << INPUT_WIDTH <<
-    //", height=" << INPUT_HEIGHT <<
-    //", format=NV12, framerate=" << CAMERA_FRAMERATE <<
-    //" ! nvvidconv flip-method=" << FLIP <<
-    //" ! video/x-raw, width=" << DISPLAY_WIDTH <<
-    //", height=" << DISPLAY_HEIGHT <<
-    //", format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
-
-    std::cout << "Before video.open()!" << std::endl;
+    std::cout << "Opening camera..." << std::endl;
     cv::VideoCapture video(0, CAP_V4L2);
 
-    // video.open(ss.str());
-    std::cout << "After video.open()!" << std::endl;
+    if (!video.isOpened())
+    {
+        std::cerr << "Unable to open camera!" << std::endl;
+        return -1;
+    }
+
+    std::cout << "Camera opened successfully!" << std::endl;
+
     // Set camera properties
     video.set(CAP_PROP_FRAME_WIDTH, DISPLAY_WIDTH);
     video.set(CAP_PROP_FRAME_HEIGHT, DISPLAY_HEIGHT);
     video.set(CAP_PROP_FPS, CAMERA_FRAMERATE);
 
-    if (!video.isOpened())
-    {
-        std::cout << "Unable to get video from the camera!" << std::endl;
+    // Optional: Set buffer size to reduce latency
+    video.set(CAP_PROP_BUFFERSIZE, 1);
 
-        return -1;
-    }
-
-    std::cout << "Got here!" << std::endl;
-
-    cv::Mat frame;
-
-    // Create VideoWriter
+    // Verify actual camera settings
     int frame_width = static_cast<int>(video.get(CAP_PROP_FRAME_WIDTH));
     int frame_height = static_cast<int>(video.get(CAP_PROP_FRAME_HEIGHT));
+    double fps = video.get(CAP_PROP_FPS);
+
+    std::cout << "Camera settings:" << std::endl;
+    std::cout << "  Resolution: " << frame_width << "x" << frame_height << std::endl;
+    std::cout << "  FPS: " << fps << std::endl;
+
+    // CRITICAL: Warm up the camera by discarding first frames
+    std::cout << "Warming up camera (discarding first 30 frames)..." << std::endl;
+    cv::Mat dummy_frame;
+    for (int i = 0; i < 30; ++i) {
+        video >> dummy_frame;
+        if (dummy_frame.empty()) {
+            std::cout << "  Frame " << i << " empty, continuing..." << std::endl;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    std::cout << "Camera warm-up complete!" << std::endl;
+
+    // Create VideoWriter
     VideoWriter writer(
         "output.mp4",
-        VideoWriter::fourcc('m','p','4','v'),  // MP4
-        30.0,
+        VideoWriter::fourcc('m','p','4','v'),
+        fps > 0 ? fps : 30.0,  // Use detected FPS or default to 30
         Size(frame_width, frame_height)
     );
+
     if (!writer.isOpened()) {
         cerr << "Could not open output file for write" << endl;
         return -1;
     }
 
-    cout << "Recording... Press ESC to stop." << endl;
+    cout << "\nRecording 150 frames... Press ESC to stop early." << endl;
+
+    cv::Mat frame;
+    int frames_written = 0;
+    int frames_failed = 0;
 
     for (int i = 0; i < 150; ++i) {
-		std::cout << i << '\n';
-        // Grab and retrieve frame
-        // video.grab();
-        // video.retrieve(frame);
-        video.read(frame);
-        if (frame.empty()) {
-            cerr << "Empty frame, exiting..." << endl;
-            break;
+        // Read frame with error checking
+        bool success = video.read(frame);
+
+        if (!success || frame.empty()) {
+            cerr << "Failed to capture frame " << i << endl;
+            frames_failed++;
+
+            // Try to continue for a few failures
+            if (frames_failed > 10) {
+                cerr << "Too many failures, stopping..." << endl;
+                break;
+            }
+            continue;
+        }
+
+        // Verify frame has data
+        if (frame.rows == 0 || frame.cols == 0) {
+            cerr << "Frame " << i << " has zero dimensions" << endl;
+            frames_failed++;
+            continue;
         }
 
         // Write frame to video
         writer.write(frame);
+        frames_written++;
+
+        // Progress indicator
+        if (i % 10 == 0) {
+            std::cout << "Frame " << i << " captured ("
+                     << frame.cols << "x" << frame.rows << ")" << std::endl;
+        }
+
+        // Optional: Display frame (comment out if headless)
+        // cv::imshow("Recording", frame);
+        // if (cv::waitKey(1) == 27) break;  // ESC to exit
     }
-    // video.release()
+
+    // Release resources
+    video.release();
     writer.release();
     destroyAllWindows();
 
+    cout << "\n=== Recording Summary ===" << endl;
+    cout << "Frames written: " << frames_written << endl;
+    cout << "Frames failed: " << frames_failed << endl;
     cout << "Video saved as output.mp4" << endl;
-    return 0;
-
-    while (video.read(frame))
-    {
-        cv::imshow("Video feed", frame);
-
-        if (cv::waitKey(25) >= 0)
-        {
-            break;
-        }
-   }
-
-    std::cout << "Finished!" << std::endl;
 
     return 0;
 }
-
 
 // int main()
 // {
