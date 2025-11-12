@@ -38,7 +38,7 @@ cv::Point2f VecDown::getVecDownDisplacement() const
 
 [[nodiscard]] cv::Point2f getVecDownDisplacement();
 
-cv::Vec3d VecDown::calcVecDown3d() const
+cv::Vec3d VecDown::calcVecDown3d()
 {
     Drone::GyroData gyroData = m_drone->getGyroData();
 
@@ -61,7 +61,7 @@ cv::Vec3d VecDown::calcVecDown3d() const
     return R * vecDown;
 }
 
-cv::Point2f VecDown::calcVecDownProjection() const
+cv::Point2f VecDown::calcVecDownProjection()
 {
     cv::Vec3d v = calcVecDown3d();
 
