@@ -15,9 +15,9 @@ public:
     [[nodiscard]] cv::Point2f getVecDownDisplacement() const;
 
 private:
-  	[[nodiscard]] cv::Vec3d calcVecDown3d() const;
+  	[[nodiscard]] cv::Vec3d calcVecDown3d();
 
-    [[nodiscard]] cv::Point2f calcVecDownProjection() const;
+    [[nodiscard]] cv::Point2f calcVecDownProjection();
 
     Drone* m_drone;
     cv::Point2f m_vecDown;
