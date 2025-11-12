@@ -102,9 +102,8 @@ int main(int argc, char* argv[])
 	}*/
 
 	std::string pipeline =
-        "libcamera-vid -t 0 --inline --width 640 --height 480 "
-        "--codec yuv420 --nopreview -o - | "
-        "gst-launch-1.0 fdsrc ! videoparse format=i420 width=640 height=480 ! videoconvert ! appsink";
+		"libcamerasrc ! video/x-raw,width=640,height=480,format=YUY2 "
+		"! videoconvert ! appsink";
 
     cv::VideoCapture camera(pipeline, cv::CAP_GSTREAMER);
     if (!camera.isOpened()) {
