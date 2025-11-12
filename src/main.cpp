@@ -112,6 +112,7 @@ int main(int argc, char* argv[])
     	camera >> frame;
 		if (!frame.empty())
 		{
+			std::cout << "showing\n";
 			cv::imshow("img", frame);
 		}
 	}
