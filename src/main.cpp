@@ -101,7 +101,12 @@ int main(int argc, char* argv[])
 		return 1;
 	}*/
 
-	cv::VideoCapture camera("libcamera-vid -t 1 --inline -o - ! appsink", cv::CAP_GSTREAMER);
+	std::string pipeline =
+        "libcamera-vid -t 0 --inline --width 640 --height 480 "
+        "--codec yuv420 --nopreview -o - | "
+        "videoconvert ! appsink";
+
+	cv::VideoCapture camera(pipeline, cv::CAP_GSTREAMER);
 	if (!camera.isOpened())
 	{
 		std::cout << "gergerger\n";
