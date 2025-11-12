@@ -44,8 +44,8 @@ public:
 
     const CameraInfo cameraInfo = CameraInfo(
         60 * CV_PI / 180,
-        2592,
-        1944,
+        640,
+        480,
         0.01,
         1000.0
     );
