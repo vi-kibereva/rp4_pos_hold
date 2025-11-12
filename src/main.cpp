@@ -80,10 +80,14 @@ int main(int argc, char* argv[])
 
 		PidController controller{};
 
+		auto t1 = std::chrono::high_resolution_clock::now();
+
 		while (true)
 		{
 			vecMove.calc();
-			cv::Point2f cvVecMove = vecMove.getVecMove();
+			auto t2 = std::chrono::high_resolution_clock::now();
+			cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
+			t1 = t2;
 			uint32x2_t result = controller.calculate_raw_rc( // TODO change uint32x2_t to uint32x4_t
 				vdup_n_f32(0.0f),
 				float32x2_t{ cvVecMove.x, cvVecMove.y } // TODO convert properly
