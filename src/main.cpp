@@ -102,6 +102,10 @@ int main(int argc, char* argv[])
 	}*/
 
 	cv::VideoCapture camera(0);
+	if (!cap.isOpened())
+	{
+		std::cout << "gergerger\n";
+	}
 	cv::Mat frame;
     camera >> frame;
     //cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
