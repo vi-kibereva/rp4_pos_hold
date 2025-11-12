@@ -188,7 +188,7 @@ int main(int argc, const char** argv)
     // Set camera properties
     cap.set(CAP_PROP_FRAME_WIDTH, DISPLAY_WIDTH);
     cap.set(CAP_PROP_FRAME_HEIGHT, DISPLAY_HEIGHT);
-    cap.set(CAP_PROP_FPS, CAMERA_FRAMERATEf);
+    cap.set(CAP_PROP_FPS, CAMERA_FRAMERATE);
 
     if (!video.isOpened())
     {
