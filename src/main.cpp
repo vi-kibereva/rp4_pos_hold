@@ -101,6 +101,8 @@ int main(int argc, char* argv[])
 		return 1;
 	}*/
 
+	std::cout << "1\n";
+
 	std::string pipeline =
 		"libcamerasrc ! video/x-raw,width=640,height=480,format=YUY2 "
 		"! videoconvert ! appsink";
@@ -111,9 +113,14 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+	std::cout << "2\n";
+
     cv::namedWindow("img", cv::WINDOW_AUTOSIZE);
+	
+	std::cout << "3\n";
 
     while (true) {
+		std::cout << "4\n";
         cv::Mat frame;
         if (!camera.read(frame)) {
             std::cerr << "Failed to grab frame\n";
