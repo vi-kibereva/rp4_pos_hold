@@ -72,18 +72,23 @@ int main(int argc, char* argv[])
 
 	try
 	{
+		std::cout << "1\n";
 		msp::Msp msp(port, B115200, 10);
 
 		Drone drone(msp);
+		std::cout << "1.25\n";
 
 		VecMove vecMove(drone);
+		std::cout << "1.375\n";
 
 		PidController controller(1.0f, 0.0f, 0.0f, 0.0f);
+		std::cout << "1.5\n";
 
 		auto t1 = std::chrono::high_resolution_clock::now();
 
 		while (true)
 		{
+			std::cout << "2\n";
 			vecMove.calc();
 			auto t2 = std::chrono::high_resolution_clock::now();
 			cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
