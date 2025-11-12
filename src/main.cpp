@@ -120,6 +120,10 @@ int main(int argc, char* argv[])
 			std::cout << "showing\n";
 			cv::imshow("img", frame);
 		}
+		else
+		{
+			std::cout << "not showing\n";
+		}
 	}
 	
     //cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
