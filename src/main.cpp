@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}*/
 
-	if (argc < 2)
+	/*if (argc < 2)
 	{
 		std::cerr << "Usage: " << argv[0] << " /dev/ttyUSB0\n";
 		return 2;
@@ -99,7 +99,13 @@ int main(int argc, char* argv[])
 	{
 		std::cerr << "Error: " << ex.what() << '\n';
 		return 1;
-	}
+	}*/
+
+	cv::VideoCapture camera(0);
+	cv::Mat frame;
+    camera >> frame;
+    cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
+	cv::imshow("img", frame);
 
 	return 0;
 }
