@@ -1,6 +1,6 @@
 #include "posHold/VecDown.h"
 
-VecDown::VecDown(const Drone& drone) :
+VecDown::VecDown(Drone& drone) :
     m_drone{ &drone }
 {
 }

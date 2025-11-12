@@ -7,14 +7,14 @@
 class CameraOpticalFlow
 {
 public:
-    explicit CameraOpticalFlow(const Drone& drone);
+    explicit CameraOpticalFlow(Drone& drone);
 
     void calc();
 
     [[nodiscard]] cv::Point2f getOpticalFlowAt(int x, int y) const;
 
 private:
-    const Drone* m_drone;
+    Drone* m_drone;
     cv::Mat m_prevFrame;
     cv::Mat m_opticalFlow;
 };
