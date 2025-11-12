@@ -74,9 +74,11 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		msp::Msp msp(port, B115200, 10);
+		// msp::Msp msp(port, B115200, 10);
 
-		Drone drone(msp);
+		// Drone drone(msp);
+
+		Drone drone{};
 
 		VecMove vecMove(drone);
 
