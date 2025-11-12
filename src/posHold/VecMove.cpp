@@ -11,10 +11,10 @@ void VecMove::calc()
 {
 	std::cout << "Calc vec down...\n";
     m_vecDown.calc();
-	std::cout << "Calc camera optical flow...\n";
-    m_cameraOpticalFlow.calc();
-
     const cv::Point2f p = m_vecDown.getVecDown();
+	std::cout << "Calc camera optical flow...\n";
+
+    m_cameraOpticalFlow.calc(p.x, p.y, s_accountFlowPixels * 2);
 
     if (p.x < 0 || static_cast<int>(p.x) >= m_drone->cameraInfo.resolutionX
         || p.y < 0 || static_cast<int>(p.y) >= m_drone->cameraInfo.resolutionY)
