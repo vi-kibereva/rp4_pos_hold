@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}*/
 
-	/*if (argc < 2)
+	if (argc < 2)
 	{
 		std::cerr << "Usage: " << argv[0] << " /dev/ttyUSB0\n";
 		return 2;
@@ -88,40 +88,40 @@ int main(int argc, char* argv[])
 			auto t2 = std::chrono::high_resolution_clock::now();
 			cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
 			t1 = t2;
-			uint32x2_t result = controller.calculate_raw_rc(
+			std::cout << cvVecMove << '\n';
+			/*uint32x2_t result = controller.calculate_raw_rc(
 				vdup_n_f32(0.0f),
 				float32x2_t{ cvVecMove.x, cvVecMove.y }
 			);
-			msp.setRawRc(msp::SetRawRcData(result[0], result[1], 0, 0));
+			msp.setRawRc(msp::SetRawRcData(result[0], result[1], 0, 0));*/
 		}
 	}
-	catch (const std::exception &ex)
+	catch (const std::exception& e)
 	{
-		std::cerr << "Error: " << ex.what() << '\n';
+		std::cerr << "Error: " << e.what() << '\n';
 		return 1;
-	}*/
+	}
 
-	cv::VideoCapture cap(0);
-    if (!cap.isOpened()) {
-        std::cerr << "Failed to open camera" << std::endl;
-        return -1;
-    }
+	// cv::VideoCapture cap(0);
+    // if (!cap.isOpened()) {
+    //     std::cerr << "Failed to open camera" << std::endl;
+    //     return -1;
+    // }
 
-    cap.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
-    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
+    // cap.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
+    // cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
 
-    cv::Mat frame;
+    // cv::Mat frame;
 
-    while (true) {
-        cap >> frame; // Capture a frame
-        if (frame.empty()) continue;
+    // while (true) {
+    //     cap >> frame; // Capture a frame
 
-        // Convert to grayscale
-        cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
+    //     // Convert to grayscale
+    //     cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
 
-		std::cout << frame.size() << '\n';
+	// 	std::cout << frame.size() << '\n';
 
-        // Exit on ESC key
-        if (cv::waitKey(1) == 27) break;
-    }
+    //     // Exit on ESC key
+    //     if (cv::waitKey(1) == 27) break;
+    // }
 }
