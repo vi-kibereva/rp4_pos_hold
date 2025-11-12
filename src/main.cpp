@@ -101,39 +101,30 @@ int main(int argc, char* argv[])
 		return 1;
 	}*/
 
-	std::cout << "1\n";
-
-	std::string pipeline =
-		"libcamerasrc ! video/x-raw,width=640,height=480,format=YUY2 "
-		"! videoconvert ! appsink";
-
-    cv::VideoCapture camera(pipeline, cv::CAP_GSTREAMER);
-    if (!camera.isOpened()) {
-        std::cerr << "Failed to open camera pipeline\n";
-        return 1;
+	cv::VideoCapture cap("/dev/video0", cv::CAP_V4L2);
+    if (!cap.isOpened()) {
+        std::cerr << "Failed to open camera" << std::endl;
+        return -1;
     }
 
-	std::cout << "2\n";
+    // Optionally set resolution
+    cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
+    cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+    cap.set(cv::CAP_PROP_FPS, 30);
 
-    cv::namedWindow("img", cv::WINDOW_AUTOSIZE);
-	
-	std::cout << "3\n";
+    cv::Mat frame, gray;
 
     while (true) {
-		std::cout << "4\n";
-        cv::Mat frame;
-        if (!camera.read(frame)) {
-            std::cerr << "Failed to grab frame\n";
-            continue;
-        }
+        cap >> frame; // Capture a frame
+        if (frame.empty()) continue;
 
-		std::cout << "qwerty\n";
-        cv::imshow("img", frame);
-        if (cv::waitKey(1) == 27) // ESC to exit
-            break;
+        // Convert to grayscale
+        cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+
+        // Show the grayscale frame
+        cv::imshow("Grayscale Camera", gray);
+
+        // Exit on ESC key
+        if (cv::waitKey(1) == 27) break;
     }
-
-    camera.release();
-    cv::destroyAllWindows();
-    return 0;
 }
