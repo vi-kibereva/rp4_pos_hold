@@ -163,6 +163,9 @@ void DisplayVersion()
 int main(int argc, const char** argv)
 {
 
+    using namespace std;
+    using namespace cv;
+
     DisplayVersion();
 
     std::stringstream ss;
@@ -208,7 +211,6 @@ int main(int argc, const char** argv)
 
     cout << "Recording... Press ESC to stop." << endl;
 
-    Mat frame;
     for (int i = 0; i < 150; ++i) {
 		std::cout << i << '\n';
         // Grab and retrieve frame
