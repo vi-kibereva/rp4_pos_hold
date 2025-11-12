@@ -10,9 +10,7 @@ VecMove::VecMove(Drone& drone) :
 void VecMove::calc()
 {
     m_vecDown.calc();
-    std::cout << "calc vecdown\n";
     m_cameraOpticalFlow.calc();
-    std::cout << "calc flow\n";
 
     const cv::Point2f p = m_vecDown.getVecDown();
 
