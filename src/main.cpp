@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
 			cv::Point2f cvVecMove = vecMove.getVecMove();
 			uint32x2_t result = controller.calculate_raw_rc( // TODO change uint32x2_t to uint32x4_t
 				vdup_n_f32(0.0f),
-				vcombine_f32(cvVecMove.x, cvVecMove.y) // TODO convert properly
+				float32x2_t{ cvVecMove.x, cvVecMove.y } // TODO convert properly
 			);
 			msp.setRawRc(msp::SetRawRcData(result[0], result[1], 0, 0));
 		}
