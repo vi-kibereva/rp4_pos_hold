@@ -11,7 +11,7 @@ public:
 
     void calc();
 
-    [[nodiscard]] cv::Point2f getOpticalFlowAt(int x, int y) const;
+    [[nodiscard]] cv::Point2f getOpticalFlowAt(int x, int y, int len) const;
 
 private:
     Drone* m_drone;
