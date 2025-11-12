@@ -154,10 +154,6 @@
 #define CAMERA_FRAMERATE 21/1
 #define FLIP 2
 
-
-#include <raspicam/raspicam_cv.h>
-
-
 void DisplayVersion()
 {
     std::cout << "OpenCV version: " << cv::getVersionMajor() << "." << cv::getVersionMinor() << "." << cv::getVersionRevision() << std::endl;
