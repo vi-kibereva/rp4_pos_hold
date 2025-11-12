@@ -7,7 +7,7 @@ CameraOpticalFlow::CameraOpticalFlow(Drone& drone) :
 {
 }
 
-void CameraOpticalFlow::calc()
+void CameraOpticalFlow::calc(const int x, const int y, const int len)
 {
     cv::Mat grayFrame = m_drone->getGrayscaleImage();
 
@@ -22,7 +22,7 @@ void CameraOpticalFlow::calc()
         0.5,   // pyramid scale
         3,     // levels
         15,    // window size
-        3,     // iterations
+        1,     // iterations
         5,     // poly_n
         1.2,   // poly_sigma
         0      // flags
