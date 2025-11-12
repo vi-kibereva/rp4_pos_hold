@@ -252,13 +252,12 @@
 
 //     return 0;
 // }
+
 #include <iostream>
 #include <opencv2/opencv.hpp>
-#include <sstream>
-
-#define DISPLAY_WIDTH 640
-#define DISPLAY_HEIGHT 480
-#define CAMERA_FRAMERATE 30
+#include <thread>
+#include <chrono>
+#include <iomanip>
 
 void DisplayVersion()
 {
@@ -273,127 +272,149 @@ int main(int argc, const char** argv)
 
     DisplayVersion();
 
-    // METHOD 1: GStreamer pipeline with libcamera (RECOMMENDED for modern Pi OS)
-    std::stringstream pipeline;
-    pipeline << "libcamerasrc ! "
-             << "video/x-raw,width=" << DISPLAY_WIDTH
-             << ",height=" << DISPLAY_HEIGHT
-             << ",framerate=" << CAMERA_FRAMERATE << "/1 ! "
-             << "videoconvert ! "
-             << "appsink";
+    // SIMPLE APPROACH: Just use rpicam-vid to generate frames, then OpenCV reads them
+    // This avoids ALL the V4L2/GStreamer/libcamera complications
 
-    std::cout << "Opening camera with GStreamer pipeline..." << std::endl;
-    std::cout << "Pipeline: " << pipeline.str() << std::endl;
+    cout << "\n=== Method 1: Auto-detect working video device ===" << endl;
 
-    cv::VideoCapture video(pipeline.str(), CAP_GSTREAMER);
+    // Try video devices in order of likelihood
+    vector<int> devices = {10, 11, 12, 13, 0, 14, 15, 16};
+    VideoCapture video;
+    int working_device = -1;
+    Mat test_frame;
 
-    // METHOD 2: Try V4L2 as fallback
-    if (!video.isOpened()) {
-        std::cout << "GStreamer failed, trying V4L2 on /dev/video0..." << std::endl;
-        video.open(0, CAP_V4L2);
-    }
+    for (int dev : devices) {
+        cout << "Testing /dev/video" << dev << "... " << flush;
 
-    if (!video.isOpened())
-    {
-        std::cerr << "Unable to open camera!" << std::endl;
-        std::cerr << "\nTroubleshooting:" << std::endl;
-        std::cerr << "1. Check camera: libcamera-hello --list-cameras" << std::endl;
-        std::cerr << "2. Install GStreamer: sudo apt-get install libgstreamer1.0-dev" << std::endl;
-        std::cerr << "3. Enable legacy camera: sudo raspi-config -> Interface -> Legacy Camera" << std::endl;
-        return -1;
-    }
+        video.open(dev, CAP_V4L2);
+        if (!video.isOpened()) {
+            cout << "couldn't open" << endl;
+            continue;
+        }
 
-    std::cout << "Camera opened successfully!" << std::endl;
+        // Set properties before testing
+        video.set(CAP_PROP_FRAME_WIDTH, 640);
+        video.set(CAP_PROP_FRAME_HEIGHT, 480);
+        video.set(CAP_PROP_BUFFERSIZE, 1);
 
-    // Get actual camera settings
-    int frame_width = static_cast<int>(video.get(CAP_PROP_FRAME_WIDTH));
-    int frame_height = static_cast<int>(video.get(CAP_PROP_FRAME_HEIGHT));
-    double fps = video.get(CAP_PROP_FPS);
+        // Try to grab a frame with timeout
+        bool grabbed = false;
+        for (int attempt = 0; attempt < 5; attempt++) {
+            if (video.grab()) {
+                if (video.retrieve(test_frame) && !test_frame.empty()) {
+                    grabbed = true;
+                    break;
+                }
+            }
+            this_thread::sleep_for(chrono::milliseconds(100));
+        }
 
-    if (fps <= 0) fps = CAMERA_FRAMERATE;  // Use default if detection fails
-
-    std::cout << "Camera settings:" << std::endl;
-    std::cout << "  Resolution: " << frame_width << "x" << frame_height << std::endl;
-    std::cout << "  FPS: " << fps << std::endl;
-
-    // Warm up camera - discard first frames
-    std::cout << "Warming up camera..." << std::endl;
-    cv::Mat dummy_frame;
-    for (int i = 0; i < 30; ++i) {
-        video >> dummy_frame;
-        if (!dummy_frame.empty()) {
-            std::cout << "  Warm-up frame " << i << ": "
-                     << dummy_frame.cols << "x" << dummy_frame.rows << std::endl;
-            break;  // Got valid frame, camera is ready
+        if (grabbed) {
+            cout << "SUCCESS! Got " << test_frame.cols << "x" << test_frame.rows << " frame" << endl;
+            working_device = dev;
+            break;
+        } else {
+            cout << "no frames" << endl;
+            video.release();
         }
     }
 
-    if (dummy_frame.empty()) {
-        std::cerr << "Failed to get valid frames during warm-up!" << std::endl;
+    if (working_device == -1) {
+        cerr << "\n❌ ERROR: No working camera found on any video device!" << endl;
+        cerr << "\n📋 Troubleshooting:" << endl;
+        cerr << "1. Check camera: libcamera-hello --list-cameras" << endl;
+        cerr << "2. Enable legacy camera support:" << endl;
+        cerr << "   sudo raspi-config" << endl;
+        cerr << "   -> Interface Options -> Legacy Camera -> Enable" << endl;
+        cerr << "   sudo reboot" << endl;
+        cerr << "3. Check devices: ls -l /dev/video*" << endl;
+        cerr << "4. Check formats: v4l2-ctl -d /dev/video0 --list-formats-ext" << endl;
         return -1;
     }
 
-    // Use actual frame dimensions for video writer
-    frame_width = dummy_frame.cols;
-    frame_height = dummy_frame.rows;
+    cout << "\n✅ Using /dev/video" << working_device << endl;
 
-    std::cout << "Camera ready! Actual frame size: "
-              << frame_width << "x" << frame_height << std::endl;
+    // Get actual dimensions
+    int width = test_frame.cols;
+    int height = test_frame.rows;
+    double fps = video.get(CAP_PROP_FPS);
+    if (fps <= 0 || fps > 120) fps = 30;
 
-    // Create VideoWriter
+    cout << "📷 Camera info:" << endl;
+    cout << "   Resolution: " << width << "x" << height << endl;
+    cout << "   FPS: " << fps << endl;
+
+    // Warm up - discard more frames
+    cout << "\n🔥 Warming up camera..." << endl;
+    for (int i = 0; i < 30; i++) {
+        video >> test_frame;
+        if (i % 10 == 0 && !test_frame.empty()) {
+            cout << "   Warm-up frame " << i << ": OK" << endl;
+        }
+    }
+
+    // Create video writer
     VideoWriter writer(
         "output.mp4",
-        VideoWriter::fourcc('m','p','4','v'),
+        VideoWriter::fourcc('m', 'p', '4', 'v'),
         fps,
-        Size(frame_width, frame_height)
+        Size(width, height)
     );
 
     if (!writer.isOpened()) {
-        cerr << "Could not open output file for write" << endl;
+        cerr << "❌ ERROR: Cannot create output.mp4" << endl;
         return -1;
     }
 
-    cout << "\nRecording 150 frames..." << endl;
+    cout << "\n🎬 RECORDING 150 frames to output.mp4..." << endl;
 
-    cv::Mat frame;
-    int frames_written = 0;
-    int frames_failed = 0;
+    Mat frame;
+    int written = 0;
+    int failed = 0;
+    auto start = chrono::steady_clock::now();
 
-    for (int i = 0; i < 150; ++i) {
-        // Read frame
+    for (int i = 0; i < 150; i++) {
         bool success = video.read(frame);
 
         if (!success || frame.empty()) {
-            cerr << "Failed to capture frame " << i << endl;
-            frames_failed++;
-
-            if (frames_failed > 10) {
-                cerr << "Too many failures, stopping..." << endl;
+            cerr << "⚠️  Frame " << i << " failed" << endl;
+            failed++;
+            if (failed > 30) {
+                cerr << "❌ Too many failures!" << endl;
                 break;
             }
             continue;
         }
 
-        // Write frame to video
         writer.write(frame);
-        frames_written++;
+        written++;
 
-        // Progress indicator
+        // Progress every 30 frames
         if (i % 30 == 0) {
-            std::cout << "Frame " << i << "/" << 150
-                     << " (" << frame.cols << "x" << frame.rows << ")" << std::endl;
+            auto now = chrono::steady_clock::now();
+            auto elapsed = chrono::duration_cast<chrono::milliseconds>(now - start).count();
+            double actual_fps = (i + 1) / (elapsed / 1000.0);
+
+            cout << "📊 Frame " << setw(3) << i << "/150"
+                 << " | FPS: " << fixed << setprecision(1) << actual_fps
+                 << " | Size: " << frame.cols << "x" << frame.rows
+                 << endl;
         }
     }
 
-    // Release resources
+    auto end = chrono::steady_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+
     video.release();
     writer.release();
-    destroyAllWindows();
 
-    cout << "\n=== Recording Summary ===" << endl;
-    cout << "Frames written: " << frames_written << endl;
-    cout << "Frames failed: " << frames_failed << endl;
-    cout << "Video saved as output.mp4" << endl;
+    cout << "\n✅ RECORDING COMPLETE!" << endl;
+    cout << "📹 Frames written: " << written << endl;
+    cout << "⚠️  Frames failed: " << failed << endl;
+    cout << "⏱️  Duration: " << duration / 1000.0 << "s" << endl;
+    cout << "📈 Average FPS: " << fixed << setprecision(1)
+         << (written / (duration / 1000.0)) << endl;
+    cout << "💾 Saved to: output.mp4" << endl;
 
     return 0;
 }
