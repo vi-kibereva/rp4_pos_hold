@@ -16,7 +16,7 @@ public:
 
 private:
     static constexpr int s_accountFlowPixels = 10;
-    static constexpr int s_calcFlowPixels = 20;
+    static constexpr int s_calcFlowPixels = 50;
     static constexpr double s_noFlowBalanceVecMultiplier = 1.0f;
     Drone* m_drone;
     VecDown m_vecDown;
