@@ -8,7 +8,7 @@
 class VecMove
 {
 public:
-    explicit VecMove(const Drone& drone);
+    explicit VecMove(Drone& drone);
 
     void calc();
 
@@ -17,7 +17,7 @@ public:
 private:
     static constexpr int s_accountFlowPixels = 10;
     static constexpr double s_noFlowBalanceVecMultiplier = 1.0f;
-    const Drone* m_drone;
+    Drone* m_drone;
     VecDown m_vecDown;
     CameraOpticalFlow m_cameraOpticalFlow;
     cv::Point2f m_vecMove;

@@ -6,7 +6,7 @@
 class VecDown
 {
 public:
-    explicit VecDown(const Drone& drone);
+    explicit VecDown(Drone& drone);
 
     void calc();
 
@@ -19,7 +19,7 @@ private:
 
     [[nodiscard]] cv::Point2f calcVecDownProjection() const;
 
-    const Drone* m_drone;
+    Drone* m_drone;
     cv::Point2f m_vecDown;
     cv::Point2f m_vecDownDisplacement;
     bool m_hasPrev = false;

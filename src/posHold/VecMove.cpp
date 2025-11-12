@@ -1,6 +1,6 @@
 #include "posHold/VecMove.h"
 
-VecMove::VecMove(const Drone& drone) :
+VecMove::VecMove(Drone& drone) :
     m_drone{ &drone },
     m_vecDown(drone),
     m_cameraOpticalFlow(drone)

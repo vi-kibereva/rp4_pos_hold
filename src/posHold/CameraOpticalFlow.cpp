@@ -2,7 +2,7 @@
 
 #include "posHold/CameraOpticalFlow.h"
 
-CameraOpticalFlow::CameraOpticalFlow(const Drone& drone) :
+CameraOpticalFlow::CameraOpticalFlow(Drone& drone) :
     m_drone{ &drone }
 {
 }
