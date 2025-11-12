@@ -18,6 +18,7 @@ void CameraOpticalFlow::calc()
         m_prevFrame = grayFrame.clone();
     }
 
+    std::cout << "Getting optical flow...\n";
     cv::calcOpticalFlowFarneback(
         m_prevFrame, grayFrame, m_opticalFlow,
         0.5,   // pyramid scale
@@ -28,6 +29,7 @@ void CameraOpticalFlow::calc()
         1.2,   // poly_sigma
         0      // flags
     );
+    std::cout << "Got optical flow\n";
 
     m_prevFrame = grayFrame.clone();
 }
