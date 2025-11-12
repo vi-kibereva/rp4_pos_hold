@@ -121,9 +121,7 @@ int main(int argc, char* argv[])
         // Convert to grayscale
         cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
 
-        // Show the grayscale frame
-		std::cout << 123 << '\n';
-        cv::imshow("Grayscale Camera", gray);
+		std::cout << frame.size() << '\n';
 
         // Exit on ESC key
         if (cv::waitKey(1) == 27) break;
