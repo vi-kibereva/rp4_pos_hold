@@ -23,7 +23,9 @@ int main(int argc, char* argv[])
 		msp::Msp msp(port, B115200, 10);
 
 		// --- Example: MSP_STATUS ---
+		std::cout << "frefer1" << '\n';
 		std::cout << msp.status() << '\n';
+		std::cout << "frefer2" << '\n';
 
 		// --- Example: MSP_RC ---
 		std::cout << msp.rc() << '\n';
