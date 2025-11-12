@@ -104,29 +104,30 @@ int main(int argc, char* argv[])
 	std::string pipeline =
         "libcamera-vid -t 0 --inline --width 640 --height 480 "
         "--codec yuv420 --nopreview -o - | "
-        "videoconvert ! appsink";
+        "gst-launch-1.0 fdsrc ! videoparse format=i420 width=640 height=480 ! videoconvert ! appsink";
 
-	cv::VideoCapture camera(pipeline, cv::CAP_GSTREAMER);
-	if (!camera.isOpened())
-	{
-		std::cout << "gergerger\n";
-	}
-	while (true)
-	{
-		cv::Mat frame;
-    	camera >> frame;
-		if (!frame.empty())
-		{
-			std::cout << "showing\n";
-			cv::imshow("img", frame);
-		}
-		else
-		{
-			std::cout << "not showing\n";
-		}
-	}
-	
-    //cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
+    cv::VideoCapture camera(pipeline, cv::CAP_GSTREAMER);
+    if (!camera.isOpened()) {
+        std::cerr << "❌ Failed to open camera pipeline\n";
+        return 1;
+    }
 
-	return 0;
+    cv::namedWindow("img", cv::WINDOW_AUTOSIZE);
+
+    while (true) {
+        cv::Mat frame;
+        if (!camera.read(frame)) {
+            std::cerr << "⚠️ Failed to grab frame\n";
+            continue;
+        }
+
+        cv::imshow("img", frame);
+
+        if (cv::waitKey(1) == 27) // ESC to exit
+            break;
+    }
+
+    camera.release();
+    cv::destroyAllWindows();
+    return 0;
 }
