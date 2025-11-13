@@ -178,7 +178,7 @@ int main(int argc, const char** argv)
     //", format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
 
     std::cout << "Before video.open()!" << std::endl;
-    cv::VideoCapture video("rtsp://localhost:8554");
+    cv::VideoCapture video("rtsp://localhost:8554/stream");
 
     // video.open(ss.str());
     std::cout << "After video.open()!" << std::endl;
