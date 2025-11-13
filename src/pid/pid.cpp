@@ -18,6 +18,7 @@ uint32x2_t PidController::calculate_raw_rc(float32x2_t current_position,
 	last_time = current_time;
 
 	if (dt_sec <= 0.0f) {
+
 		filtered_derivative_ = vdup_n_f32(0.0f);
 	} else {
 		float32x2_t derivative_raw =
@@ -66,6 +67,7 @@ uint32x2_t PidController::calculate_raw_rc(float32x2_t current_position,
 
 	printf("PID Output PWM: x=%d, y=%d\n", my_values[0], my_values[1]);
 	last_value_ = current_position;
+
 
 	return int_output;
 }
