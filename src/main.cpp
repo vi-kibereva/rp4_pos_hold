@@ -95,8 +95,8 @@ int main(int argc, char* argv[])
 		auto t1 = std::chrono::high_resolution_clock::now();
 
         // Create VideoWriter
-        int frame_width = static_cast<int>(video.get(CAP_PROP_FRAME_WIDTH));
-        int frame_height = static_cast<int>(video.get(CAP_PROP_FRAME_HEIGHT));
+        int frame_width = static_cast<int>(drone.m_camera.get(CAP_PROP_FRAME_WIDTH));
+        int frame_height = static_cast<int>(drone.m_camera.get(CAP_PROP_FRAME_HEIGHT));
         VideoWriter writer(
             "output.mp4",
             VideoWriter::fourcc('m','p','4','v'),  // MP4
