@@ -287,8 +287,10 @@ int main() {
 	}
 
     // Create VideoWriter
-    int frame_width = static_cast<int>(cam.get(CAP_PROP_FRAME_WIDTH));
-    int frame_height = static_cast<int>(cam.get(CAP_PROP_FRAME_HEIGHT));
+    // int frame_width = static_cast<int>(cam.get(CAP_PROP_FRAME_WIDTH));
+    // int frame_height = static_cast<int>(cam.get(CAP_PROP_FRAME_HEIGHT));
+    int frame_width = 640;
+    int frame_height = 480;
     VideoWriter writer(
         "output.mp4",
         VideoWriter::fourcc('m','p','4','v'),  // MP4
