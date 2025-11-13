@@ -258,6 +258,8 @@
 #include <opencv2/opencv.hpp>
 
 int main() {
+    using namespace cv;
+    using namespace std;
 	uint32_t num_cams = LibcameraApp::GetNumberCameras();
 	std::cout << "Found " << num_cams << " cameras." << std::endl;
 
