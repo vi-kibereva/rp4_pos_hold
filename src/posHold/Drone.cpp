@@ -7,9 +7,16 @@ Drone::Drone() :
     m_camera.set(cv::CAP_PROP_FRAME_HEIGHT, cameraInfo.resolutionY);
 }
 
-Drone::Drone(msp::Msp& msp) :
+Drone::Drone(std::string port) :
+    m_camera(port)
+{
+    m_camera.set(cv::CAP_PROP_FRAME_WIDTH, cameraInfo.resolutionX);
+    m_camera.set(cv::CAP_PROP_FRAME_HEIGHT, cameraInfo.resolutionY);
+}
+
+Drone::Drone(msp::Msp& msp, std::string port) :
     m_msp{ &msp },
-    m_camera(0)
+    m_camera(port)
 {
     m_camera.set(cv::CAP_PROP_FRAME_WIDTH, cameraInfo.resolutionX);
     m_camera.set(cv::CAP_PROP_FRAME_HEIGHT, cameraInfo.resolutionY);

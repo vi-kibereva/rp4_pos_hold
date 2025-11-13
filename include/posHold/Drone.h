@@ -52,6 +52,8 @@ public:
 
     Drone();
 
+    Drone(std::string port);
+
     explicit Drone(msp::Msp& m_msp);
 
     [[nodiscard]] cv::Mat getGrayscaleImage();
