@@ -88,6 +88,6 @@ private:
   SerialStream stream_;
 };
 
-} // namespace msp
+}
 
-#endif // !BITALUGHT_MSP_HPP
+#endif
