@@ -138,9 +138,6 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 
-
-
-
 #include <new>
 #include <string>
 #include <sstream>
@@ -181,7 +178,7 @@ int main(int argc, const char** argv)
     //", format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
 
     std::cout << "Before video.open()!" << std::endl;
-    cv::VideoCapture video("udp://127.0.0.1:8888");
+    cv::VideoCapture video("rtsp://localhost:8554");
 
     // video.open(ss.str());
     std::cout << "After video.open()!" << std::endl;
