@@ -116,4 +116,4 @@ bool BitaflughtMsp::getActiveModes(std::uint32_t *active_modes) {
 	return true;
 }
 
-} // namespace msp
+}
