@@ -22,14 +22,14 @@ uint32x2_t PidController::calculate_raw_rc(float32x2_t current_position,
 		filtered_derivative_ = vdup_n_f32(0.0f);
 	} else {
 		float32x2_t derivative_raw =
-				vmul_n_f32(vsub_f32(last_value_, current_position), 1.0f / dt_sec); // Use dt_sec
+				vmul_n_f32(vsub_f32(last_value_, current_position), 1.0f / dt_sec);
 
 		float32x2_t first_part =
 				vfma_n_f32(filtered_derivative_, filtered_derivative_, -k_df_);
 		filtered_derivative_ = vfma_n_f32(first_part, derivative_raw, k_df_);
 	}
 
-	integral_ = vfma_n_f32(integral_, error, dt_sec); // Use dt_sec
+	integral_ = vfma_n_f32(integral_, error, dt_sec);
 
 	integral_ = vmin_f32(vmax_f32(integral_, integral_min_), integral_max_);
 
