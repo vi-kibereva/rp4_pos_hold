@@ -287,8 +287,8 @@ int main() {
 	}
 
     // Create VideoWriter
-    int frame_width = static_cast<int>(cap.get(CAP_PROP_FRAME_WIDTH));
-    int frame_height = static_cast<int>(cap.get(CAP_PROP_FRAME_HEIGHT));
+    int frame_width = static_cast<int>(cam.get(CAP_PROP_FRAME_WIDTH));
+    int frame_height = static_cast<int>(cam.get(CAP_PROP_FRAME_HEIGHT));
     VideoWriter writer(
         "output.mp4",
         VideoWriter::fourcc('m','p','4','v'),  // MP4
@@ -301,22 +301,6 @@ int main() {
     }
 
     cout << "Recording... Press ESC to stop." << endl;
-
-    Mat frame;
-    for (int i = 0; i < 150; ++i) {
-		std::cout << i << '\n';
-        // Grab and retrieve frame
-        cap.grab();
-        cap.retrieve(frame);
-
-        if (frame.empty()) {
-            cerr << "Empty frame, exiting..." << endl;
-            break;
-        }
-
-        // Write frame to video
-        writer.write(frame);
-    }
 
     int ch=0;
     while(ch!=27){
