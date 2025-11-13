@@ -62,10 +62,11 @@ public:
 
     [[nodiscard]] double getAltitude();
 
-    cv::VideoCapture m_camera;
+    cv::VideoCapture& getCamera() { return m_camera; }
 
 private:
     msp::Msp* m_msp;
+    cv::VideoCapture m_camera;
 };
 
 #endif
