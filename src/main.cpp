@@ -181,7 +181,7 @@ int main(int argc, const char** argv)
     //", format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink";
 
     std::cout << "Before video.open()!" << std::endl;
-    cv::VideoCapture video("udp://127.0.0.1:8888", CAP_V4L2);
+    cv::VideoCapture video("udp://127.0.0.1:8888");
 
     // video.open(ss.str());
     std::cout << "After video.open()!" << std::endl;
