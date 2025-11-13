@@ -49,11 +49,6 @@ void CameraOpticalFlow::calc(const int x, const int y, const int len)
 
     flowROI.copyTo(m_opticalFlow(roi));
 
-    // Optional: zero out outside the ROI (just in case)
-    // cv::Mat mask = cv::Mat::zeros(grayFrame.size(), CV_8U);
-    // mask(roi) = 1;
-    // m_opticalFlow.setTo(cv::Scalar(0,0), mask == 0);
-
     m_prevFrame = grayFrame.clone();
 }
 

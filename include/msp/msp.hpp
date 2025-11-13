@@ -327,6 +327,6 @@ private:
   BitaflughtMsp bitaflught_msp_;
 };
 
-} // namespace msp
+}
 
-#endif // !MSP_HPP
+#endif
