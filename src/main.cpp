@@ -6,6 +6,11 @@
 #include <chrono>
 #include <thread>
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
+
 #include "posHold/VecMove.h"
 #include "pid/pid.hpp"
 
@@ -86,19 +91,55 @@ int main(int argc, char* argv[])
 
 		auto t1 = std::chrono::high_resolution_clock::now();
 
-		while (true)
+        // Create VideoWriter
+        int frame_width = static_cast<int>(video.get(CAP_PROP_FRAME_WIDTH));
+        int frame_height = static_cast<int>(video.get(CAP_PROP_FRAME_HEIGHT));
+        VideoWriter writer(
+            "output.mp4",
+            VideoWriter::fourcc('m','p','4','v'),  // MP4
+            30.0,
+            Size(frame_width, frame_height)
+        );
+        if (!writer.isOpened()) {
+            cerr << "Could not open output file for write" << endl;
+            return -1;
+        }
+
+        
+        cv::Mat frame;
+
+
+
+//     cout << "Recording... Press ESC to stop." << endl;
+
+//     for (int i = 0; i < 150; ++i) {
+// 		std::cout << i << '\n';
+//         // Grab and retrieve frame
+//         // video.grab();
+//         // video.retrieve(frame);
+//         video.read(frame);
+//         if (frame.empty()) {
+//             cerr << "Empty frame, exiting..." << endl;
+//             break;
+//         }
+
+        for (int i = 0; i < 4000; ++i)
 		{
-			vecMove.calc();
-			auto t2 = std::chrono::high_resolution_clock::now();
-			cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
-			t1 = t2;
-			std::cout << cvVecMove << '\n';
+			// vecMove.calc();
+			// auto t2 = std::chrono::high_resolution_clock::now();
+			// cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
+			// t1 = t2;
+			// std::cout << cvVecMove << '\n';
 			/*uint32x2_t result = controller.calculate_raw_rc(
 				vdup_n_f32(0.0f),
 				float32x2_t{ cvVecMove.x, cvVecMove.y }
 			);
 			msp.setRawRc(msp::SetRawRcData(result[0], result[1], 0, 0));*/
+
+            drone.m_camera.read(frame);
+            writer.write(frame);
 		}
+        writer.release();
 	}
 	catch (const std::exception& e)
 	{
@@ -198,19 +239,7 @@ int main(int argc, char* argv[])
 
 //     cv::Mat frame;
 
-//     // Create VideoWriter
-//     int frame_width = static_cast<int>(video.get(CAP_PROP_FRAME_WIDTH));
-//     int frame_height = static_cast<int>(video.get(CAP_PROP_FRAME_HEIGHT));
-//     VideoWriter writer(
-//         "output.mp4",
-//         VideoWriter::fourcc('m','p','4','v'),  // MP4
-//         30.0,
-//         Size(frame_width, frame_height)
-//     );
-//     if (!writer.isOpened()) {
-//         cerr << "Could not open output file for write" << endl;
-//         return -1;
-//     }
+
 
 //     cout << "Recording... Press ESC to stop." << endl;
 
