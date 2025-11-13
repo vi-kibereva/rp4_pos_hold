@@ -44,15 +44,16 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 #OpenCV
 find_package( OpenCV REQUIRED )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
 
-find_package( LCCV REQUIRED )
-include_directories( ${LCCV_INCLUDE_DIRS} )
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBCAMERA REQUIRED libcamera)
+
+include_directories(${LIBCAMERA_INCLUDE_DIRS} ${OPENCV_INCLUDE_DIRS})
 
 # Collect all .cpp files in src/
 file(GLOB_RECURSE ALL_SRC "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
 # --- First executable: rp4_pos_hold1 ---
 add_executable(rp4_pos_hold1 ${ALL_SRC})
-target_link_libraries(rp4_pos_hold1 ${OpenCV_LIBS})
-target_link_libraries(rp4_pos_hold1 ${LCCV_LIBS})
+target_link_libraries(rp4_pos_hold1 -llccv ${OpenCV_LIBS})
