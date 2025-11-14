@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
 
         // Time-based recording: exactly 90 seconds
         auto start_time = std::chrono::high_resolution_clock::now();
-        auto target_duration = std::chrono::seconds(90);
+        auto target_duration = std::chrono::seconds(30);
 
         while (true) {
             auto current_time = std::chrono::high_resolution_clock::now();
