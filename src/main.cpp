@@ -29,7 +29,7 @@ int main() {
     avformat_network_init();
 
     // -------- Open input video stream with V4L2 --------
-    AVFormatContext fmt_ctx = avformat_alloc_context();
+    AVFormatContext* fmt_ctx = avformat_alloc_context();
 
     if (avformat_open_input(&fmt_ctx, input_url, nullptr, nullptr) < 0) {
         std::cerr << "Could not open input!\n";
