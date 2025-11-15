@@ -1,97 +1,124 @@
-#include <gst/gst.h>
-#include <gst/app/gstappsink.h>
-#include <opencv2/opencv.hpp>
-#include <iostream>
-#include <mutex>
-#include <thread>
-#include <atomic>
-
-std::atomic<bool> running{true};
-std::mutex frame_mutex;
-cv::Mat latest_frame;
-
-GstFlowReturn on_new_sample(GstAppSink *appsink, gpointer user_data) {
-    GstSample *sample = gst_app_sink_pull_sample(appsink);
-    if (!sample) return GST_FLOW_ERROR;
-
-    GstBuffer *buffer = gst_sample_get_buffer(sample);
-    GstCaps *caps = gst_sample_get_caps(sample);
-    GstStructure *s = gst_caps_get_structure(caps, 0);
-
-    int width, height;
-    gst_structure_get_int(s, "width", &width);
-    gst_structure_get_int(s, "height", &height);
-
-    GstMapInfo map;
-    if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
-        cv::Mat frame(height, width, CV_8UC3, (char*)map.data);
-        {
-            std::lock_guard<std::mutex> lock(frame_mutex);
-            frame.copyTo(latest_frame);  // Only copy once
-        }
-        gst_buffer_unmap(buffer, &map);
-    }
-
-    gst_sample_unref(sample);
-    return GST_FLOW_OK;
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
 }
 
-int main(int argc, char **argv) {
-    gst_init(&argc, &argv);
+#include <opencv2/opencv.hpp>
+#include <iostream>
 
-    // DMABUF-based high-performance pipeline
-    std::string pipeline_str = R"(
-libcamerasrc ! video/x-raw,width=1280,height=720,framerate=30/1,format=NV12 ! \
-    tee name=t \
-        t. ! queue ! videoconvert ! video/x-raw,format=I420 ! \
-             x264enc tune=zerolatency bitrate=1500 speed-preset=superfast ! \
-             h264parse ! mp4mux ! filesink location=output.mp4 sync=false \
-        t. ! queue ! glupload ! glcolorconvert ! appsink name=appsink0 emit-signals=true max-buffers=2 drop=true
-)";
+int main() {
+    const char* input_url = "/dev/video0";  // Pi Camera via v4l2
+    const char* output_file = "output.mp4";
+    const int target_fps = 30;
+    const int duration_sec = 30;
+    const int max_frames = target_fps * duration_sec;  // 30s recording
 
-    GError *error = nullptr;
-    GstElement *pipeline = gst_parse_launch(pipeline_str.c_str(), &error);
-    if (!pipeline) {
-        std::cerr << "Failed to create pipeline: " << error->message << std::endl;
-        g_clear_error(&error);
+    avformat_network_init();
+
+    // -------- Open input video stream --------
+    AVFormatContext* fmt_ctx = nullptr;
+    if (avformat_open_input(&fmt_ctx, input_url, nullptr, nullptr) < 0) {
+        std::cerr << "Could not open input!\n";
         return -1;
     }
 
-    GstElement *appsink = gst_bin_get_by_name(GST_BIN(pipeline), "appsink0");
-    gst_app_sink_set_emit_signals((GstAppSink*)appsink, true);
-    gst_app_sink_set_max_buffers((GstAppSink*)appsink, 2);
-    gst_app_sink_set_drop((GstAppSink*)appsink, true);
-    g_signal_connect(appsink, "new-sample", G_CALLBACK(on_new_sample), nullptr);
+    if (avformat_find_stream_info(fmt_ctx, nullptr) < 0) {
+        std::cerr << "Could not find stream info!\n";
+        return -1;
+    }
 
-    gst_element_set_state(pipeline, GST_STATE_PLAYING);
+    // -------- Find video stream --------
+    int video_stream_idx = av_find_best_stream(fmt_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
+    if (video_stream_idx < 0) {
+        std::cerr << "Could not find video stream!\n";
+        return -1;
+    }
 
-    // OpenCV display thread
-    std::thread cv_thread([](){
-        while (running) {
-            cv::Mat frame;
-            {
-                std::lock_guard<std::mutex> lock(frame_mutex);
-                if (!latest_frame.empty())
-                    latest_frame.copyTo(frame);
+    AVCodecParameters* codecpar = fmt_ctx->streams[video_stream_idx]->codecpar;
+    const AVCodec* codec = avcodec_find_decoder(codecpar->codec_id);
+    AVCodecContext* codec_ctx = avcodec_alloc_context3(codec);
+    avcodec_parameters_to_context(codec_ctx, codecpar);
+
+    if (avcodec_open2(codec_ctx, codec, nullptr) < 0) {
+        std::cerr << "Could not open codec!\n";
+        return -1;
+    }
+
+    // -------- Prepare scaler to BGR24 --------
+    SwsContext* sws = sws_getContext(
+        codec_ctx->width,
+        codec_ctx->height,
+        codec_ctx->pix_fmt,
+        codec_ctx->width,
+        codec_ctx->height,
+        AV_PIX_FMT_BGR24,
+        SWS_FAST_BILINEAR,
+        nullptr, nullptr, nullptr
+    );
+
+    // -------- Prepare OpenCV VideoWriter --------
+    cv::VideoWriter writer;
+    writer.open(
+        output_file,
+        cv::VideoWriter::fourcc('a', 'v', 'c', '1'), // H.264
+        target_fps,
+        cv::Size(codec_ctx->width, codec_ctx->height)
+    );
+
+    if (!writer.isOpened()) {
+        std::cerr << "Cannot open output video file!\n";
+        return -1;
+    }
+
+    // -------- Read frames --------
+    AVPacket* pkt = av_packet_alloc();
+    AVFrame* frame = av_frame_alloc();
+    AVFrame* bgr = av_frame_alloc();
+
+    int num_bytes = av_image_get_buffer_size(AV_PIX_FMT_BGR24, codec_ctx->width,
+                                             codec_ctx->height, 1);
+    uint8_t* buffer = (uint8_t*)av_malloc(num_bytes);
+    av_image_fill_arrays(bgr->data, bgr->linesize, buffer,
+                         AV_PIX_FMT_BGR24, codec_ctx->width, codec_ctx->height, 1);
+
+    int frame_count = 0;
+
+    while (av_read_frame(fmt_ctx, pkt) >= 0 && frame_count < max_frames) {
+        if (pkt->stream_index == video_stream_idx) {
+            avcodec_send_packet(codec_ctx, pkt);
+
+            while (avcodec_receive_frame(codec_ctx, frame) == 0 && frame_count < max_frames) {
+                // Convert to BGR
+                sws_scale(
+                    sws,
+                    frame->data, frame->linesize,
+                    0, codec_ctx->height,
+                    bgr->data, bgr->linesize
+                );
+
+                // Convert to cv::Mat
+                cv::Mat img(codec_ctx->height, codec_ctx->width, CV_8UC3, bgr->data[0]);
+
+                // Save frame to file
+                writer.write(img);
+
+                frame_count++;
             }
-            if (!frame.empty()) {
-                cv::imshow("Camera", frame);
-                if (cv::waitKey(1) == 27) break;  // ESC to quit
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
-    });
+        av_packet_unref(pkt);
+    }
 
-    // Wait for Ctrl+C
-    std::cout << "Streaming... Press Ctrl+C to stop." << std::endl;
-    std::signal(SIGINT, [](int){ running = false; });
+    std::cout << "Recording finished: " << frame_count << " frames captured.\n";
 
-    while (running) std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    gst_element_set_state(pipeline, GST_STATE_NULL);
-    gst_object_unref(appsink);
-    gst_object_unref(pipeline);
-    cv_thread.join();
+    // cleanup
+    writer.release();
+    sws_freeContext(sws);
+    av_frame_free(&frame);
+    av_frame_free(&bgr);
+    av_packet_free(&pkt);
+    avcodec_free_context(&codec_ctx);
+    avformat_close_input(&fmt_ctx);
 
     return 0;
 }
