@@ -29,17 +29,11 @@ int main() {
     avformat_network_init();
 
     // -------- Open input video stream with V4L2 --------
-    AVFormatContext* fmt_ctx = nullptr;
-    const AVInputFormat* input_fmt = av_find_input_format("v4l2");
-    if (!input_fmt) {
-        std::cerr << "[ERROR] v4l2 input format not found!\n";
+    if (avformat_open_input(&fmt_ctx, input_url, nullptr, nullptr) < 0) {
+        std::cerr << "Could not open input!\n";
         return -1;
     }
 
-    if (avformat_open_input(&fmt_ctx, input_url, input_fmt, nullptr) < 0) {
-        std::cerr << "[ERROR] Could not open input device " << input_url << "\n";
-        return -1;
-    }
 
     if (avformat_find_stream_info(fmt_ctx, nullptr) < 0) {
         std::cerr << "[ERROR] Could not find stream info!\n";
