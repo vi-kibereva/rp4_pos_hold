@@ -30,7 +30,7 @@ int main() {
 
     // -------- Open input video stream with V4L2 --------
     AVFormatContext* fmt_ctx = nullptr;
-    AVInputFormat* input_fmt = av_find_input_format("v4l2");
+    const AVInputFormat* input_fmt = av_find_input_format("v4l2");
     if (!input_fmt) {
         std::cerr << "[ERROR] v4l2 input format not found!\n";
         return -1;
