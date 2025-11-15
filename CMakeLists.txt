@@ -56,7 +56,7 @@ pkg_check_modules(LIBCAMERA REQUIRED libcamera)
 
 include_directories(${LIBCAMERA_INCLUDE_DIRS} ${OPENCV_INCLUDE_DIRS})
 
-target_include_directories(rp4_pos_hold1 PRIVATE
+include_directories(
     ${AVCODEC_INCLUDE_DIRS}
     ${AVFORMAT_INCLUDE_DIRS}
     ${AVUTIL_INCLUDE_DIRS}
@@ -64,7 +64,7 @@ target_include_directories(rp4_pos_hold1 PRIVATE
     ${OpenCV_INCLUDE_DIRS}
 )
 
-target_link_libraries(rp4_pos_hold1 PRIVATE
+link_libraries(
     ${AVCODEC_LIBRARIES}
     ${AVFORMAT_LIBRARIES}
     ${AVUTIL_LIBRARIES}
