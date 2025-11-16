@@ -49,9 +49,9 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET
   libavcodec
   libavformat
+  libavdevice
   libavutil
   libswscale
-  libavdevice
 )
 
 # pkg_check_modules(LIBCAMERA REQUIRED libcamera)

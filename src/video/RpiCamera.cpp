@@ -69,13 +69,13 @@ void RpiCamera::init_converter() {
 
     bgr_frame_ = ::av_frame_alloc();
     if (!bgr_frame_)
-        throw std::runtime_error("Failed to allocate BGR frame");
+        throw std::runtime_error(std::string("Failed to allocate BGR frame"));
 
     int num_bytes = ::av_image_get_buffer_size(target_fmt, width_, height_, 1);
     bgr_buffer_ = static_cast<uint8_t*>(::av_malloc(num_bytes));
     if (!bgr_buffer_) {
         ::av_frame_free(&bgr_frame_);
-        throw std::runtime_error("Failed to allocate BGR buffer");
+        throw std::runtime_error(std::string("Failed to allocate BGR buffer"));
     }
 
     ::av_image_fill_arrays(bgr_frame_->data, bgr_frame_->linesize, bgr_buffer_,
@@ -90,7 +90,7 @@ void RpiCamera::init_converter() {
         if (!sws_ctx_) {
             ::av_free(bgr_buffer_);
             ::av_frame_free(&bgr_frame_);
-            throw std::runtime_error("Failed to initialize swscale context");
+            throw std::runtime_error(std::string("Failed to initialize swscale context"));
         }
     } else {
         sws_ctx_ = nullptr;
@@ -194,7 +194,7 @@ RpiCamera::RpiCamera(std::string device) {
         
     format_ctx_ = ::avformat_alloc_context();
     if (format_ctx_ == nullptr)
-        throw std::runtime_error("Error allocating the AVFormatContext");
+        throw std::runtime_error(std::string("Error allocating the AVFormatContext"));
 
     ::avdevice_register_all();
 
@@ -205,7 +205,7 @@ RpiCamera::RpiCamera(std::string device) {
         char errbuf[128];
         ::av_strerror(result, errbuf, sizeof(errbuf));
 
-        throw std::runtime_error(errbuf);
+        throw std::runtime_error(std::string("Error opening input: ") + errbuf);
     }
 
 
@@ -214,25 +214,25 @@ RpiCamera::RpiCamera(std::string device) {
 
     find_codec(::AVMEDIA_TYPE_VIDEO, &video_codec, &video_codec_parameters);
     if (stream_id_ == -1)
-        throw std::runtime_error("Can't find the video codec");
+        throw std::runtime_error(std::string("Can't find the video codec"));
 
     codec_ctx_ = ::avcodec_alloc_context3(video_codec);
     if (codec_ctx_ == nullptr)
-        throw std::runtime_error("Failed to allocate memory for AVCodecContext");
+        throw std::runtime_error(std::string("Failed to allocate memory for AVCodecContext"));
 
     if (::avcodec_parameters_to_context(codec_ctx_, video_codec_parameters) < 0)
-        throw std::runtime_error("Failed to copy codec params to codec context");
+        throw std::runtime_error(std::string("Failed to copy codec params to codec context"));
 
     if (::avcodec_open2(codec_ctx_, video_codec, NULL) < 0)
-        throw std::runtime_error("Failed to open codec through avcodec_open2");
+        throw std::runtime_error(std::string("Failed to open codec through avcodec_open2"));
 
     frame_ = ::av_frame_alloc();
     if (!frame_)
-        throw std::runtime_error("Failed to allocate memory for AVFrame");
+        throw std::runtime_error(std::string("Failed to allocate memory for AVFrame"));
 
     packet_ = ::av_packet_alloc();
     if (!packet_)
-        throw std::runtime_error("Failed to allocate memory for AVPacket");
+        throw std::runtime_error(std::string("Failed to allocate memory for AVPacket"));
 
     init_converter();
 }
@@ -255,11 +255,11 @@ RpiCamera::~RpiCamera() {
 }
 
 RpiCamera::RpiCamera(const RpiCamera& other) {
-    throw std::runtime_error("RpiCamera cannot be copied");
+    throw std::runtime_error(std::string("RpiCamera cannot be copied"));
 }
 
 RpiCamera& RpiCamera::operator=(const RpiCamera& other) {
-    throw std::runtime_error("RpiCamera cannot be copied");
+    throw std::runtime_error(std::string("RpiCamera cannot be copied"));
 }
 
 RpiCamera::RpiCamera(RpiCamera&& other) noexcept
