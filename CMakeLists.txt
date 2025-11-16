@@ -5,8 +5,7 @@
 #set(CMAKE_CXX_STANDARD 17)
 #set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #
-## Make headers in include/ visible
-#include_directories(${CMAKE_SOURCE_DIR}/include)
+## Make headers in include/ visible #include_directories(${CMAKE_SOURCE_DIR}/include)
 #
 ## Collect all .cpp files in src/
 #file(GLOB_RECURSE ALL_SRC "${CMAKE_SOURCE_DIR}/src/*.cpp")
@@ -45,37 +44,40 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 #OpenCV
 find_package( OpenCV REQUIRED )
 
-
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(AVCODEC REQUIRED libavcodec)
-pkg_check_modules(AVFORMAT REQUIRED libavformat)
-pkg_check_modules(AVUTIL REQUIRED libavutil)
-pkg_check_modules(SWSCALE REQUIRED libswscale)
-pkg_check_modules(LIBCAMERA REQUIRED libcamera)
+
+pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET
+  libavcodec
+  libavformat
+  libavutil
+  libswscale
+)
+
+# pkg_check_modules(LIBCAMERA REQUIRED libcamera)
+
 # find_package(liblccv REQUIRED)
 
-include_directories(${LIBCAMERA_INCLUDE_DIRS} ${OPENCV_INCLUDE_DIRS})
-
-include_directories(
-    ${AVCODEC_INCLUDE_DIRS}
-    ${AVFORMAT_INCLUDE_DIRS}
-    ${AVUTIL_INCLUDE_DIRS}
-    ${SWSCALE_INCLUDE_DIRS}
-    ${OpenCV_INCLUDE_DIRS}
-)
-
-link_libraries(
-    ${AVCODEC_LIBRARIES}
-    ${AVFORMAT_LIBRARIES}
-    ${AVUTIL_LIBRARIES}
-    ${SWSCALE_LIBRARIES}
-    ${OpenCV_LIBS}
-)
+# include_directories(
+#   ${LIBCAMERA_INCLUDE_DIRS}
+# )
 
 # Collect all .cpp files in src/
 file(GLOB_RECURSE ALL_SRC "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
 # --- First executable: rp4_pos_hold1 ---
 add_executable(rp4_pos_hold1 ${ALL_SRC})
-target_link_libraries(rp4_pos_hold1 -llccv ${OpenCV_LIBS})
+
+target_include_directories(rp4_pos_hold1 PRIVATE
+  ${FFMPEG_INCLUDE_DIRS}
+  ${FFMPEG_CFLAGS}
+)
+
+target_link_directories(rp4_pos_hold1 PRIVATE ${FFMPEG_LIBRARY_DIRS})
+
+# target_link_libraries(rp4_pos_hold1 -llccv ${OpenCV_LIBS})
+target_link_libraries(
+  rp4_pos_hold1 PRIVATE ${FFMPEG_LIBRARIES}
+  ${OpenCV_LIBS}
+#  lccv
+)
 # target_link_libraries(rp4_pos_hold1 liblccv)
