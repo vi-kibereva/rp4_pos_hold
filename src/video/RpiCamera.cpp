@@ -193,11 +193,7 @@ RpiCamera::RpiCamera(std::string device) {
     if (format_ctx_ == nullptr)
         throw std::runtime_error("Error allocating the AVFormatContext");
 
-    const ::AVInputFormat *input_fmt = ::av_find_input_format("v4l2");
-    if (!input_fmt)
-        throw std::runtime_error("Failed to find v4l2 input format");
-
-    const int result = ::avformat_open_input(&format_ctx_, device.c_str(), input_fmt, NULL);
+    const int result = ::avformat_open_input(&format_ctx_, device.c_str(), NULL, NULL);
     if (result < 0) {
         ::avformat_free_context(format_ctx_);
 
