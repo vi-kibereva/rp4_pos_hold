@@ -5,6 +5,7 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavutil/pixdesc.h>
+#include <libavdevice/avdevice.h>
 }
 
 #include "video/RpiCamera.hpp"
@@ -189,9 +190,13 @@ cv::Mat RpiCamera::readFrame() {
 }
 
 RpiCamera::RpiCamera(std::string device) {
+
+        
     format_ctx_ = ::avformat_alloc_context();
     if (format_ctx_ == nullptr)
         throw std::runtime_error("Error allocating the AVFormatContext");
+
+    ::avdevice_register_all();
 
     const int result = ::avformat_open_input(&format_ctx_, device.c_str(), NULL, NULL);
     if (result < 0) {
