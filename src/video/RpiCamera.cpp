@@ -191,21 +191,21 @@ cv::Mat RpiCamera::readFrame() {
 RpiCamera::RpiCamera(std::string device) {
     format_ctx_ = ::avformat_alloc_context();
     if (format_ctx_ == nullptr)
-        throw std::runtime_error("Error allocating the AVFormatContext\n");
+        throw std::runtime_error("Error allocating the AVFormatContext");
 
-    std::cout << "123\n";
+    const ::AVInputFormat *input_fmt = ::av_find_input_format("v4l2");
+    if (!input_fmt)
+        throw std::runtime_error("Failed to find v4l2 input format");
 
-    const ssize_t result = ::avformat_open_input(&format_ctx_, device.c_str(), NULL, NULL);
+    const int result = ::avformat_open_input(&format_ctx_, device.c_str(), input_fmt, NULL);
     if (result < 0) {
         ::avformat_free_context(format_ctx_);
 
         char errbuf[128];
         ::av_strerror(result, errbuf, sizeof(errbuf));
 
-        throw std::runtime_error(const_cast<const char *>(errbuf));
+        throw std::runtime_error(errbuf);
     }
-
-    std::cout << "123\n";
 
 
     const ::AVCodec *video_codec;
@@ -213,7 +213,7 @@ RpiCamera::RpiCamera(std::string device) {
 
     find_codec(::AVMEDIA_TYPE_VIDEO, &video_codec, &video_codec_parameters);
     if (stream_id_ == -1)
-        throw std::runtime_error("Can't find the video codec\n");
+        throw std::runtime_error("Can't find the video codec");
 
     codec_ctx_ = ::avcodec_alloc_context3(video_codec);
     if (codec_ctx_ == nullptr)
