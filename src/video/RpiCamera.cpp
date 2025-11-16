@@ -202,7 +202,7 @@ RpiCamera::RpiCamera(std::string device) {
         char errbuf[128];
         ::av_strerror(result, errbuf, sizeof(errbuf));
 
-        throw std::runtime_error(errbuf);
+        throw std::runtime_error(const_cast<const char *>(errbuf));
     }
 
     std::cout << "123\n";
