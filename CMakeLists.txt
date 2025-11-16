@@ -51,6 +51,7 @@ pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET
   libavformat
   libavutil
   libswscale
+  libavdevice
 )
 
 # pkg_check_modules(LIBCAMERA REQUIRED libcamera)
