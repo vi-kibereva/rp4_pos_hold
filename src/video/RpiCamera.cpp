@@ -187,11 +187,11 @@ cv::Mat RpiCamera::readFrame() {
 
     cv::Mat frame = convertToBGR(buffer, stream_config);
 
-    request->reuse(libcamera::Request::ReuseBuffers);
-    if (int ret = camera_->queueRequest(request); ret) {
-        std::cerr << "queueRequest failed: " << ret << "\n";
-        return frame;
-    }
+    // request->reuse(libcamera::Request::ReuseBuffers);
+    // if (int ret = camera_->queueRequest(request); ret) {
+    //     std::cerr << "queueRequest failed: " << ret << "\n";
+    //     return frame;
+    // }
 
     return frame;
 }
