@@ -45,7 +45,7 @@ void RpiCamera::setupCamera(const CameraConfig& cfg) {
     if (cfg.camera_index >= camera_manager_->cameras().size())
         throw std::runtime_error(std::string("Camera index out of range"));
 
-    camera_ = camera_manager_->cameras()[cfg.camera_index];
+    camera_ = camera_manager_->get(cfg.camera_index);
     std::cout << "Selected camera: " << camera_->id() << "\n";
 
     ret = camera_->acquire();
@@ -167,20 +167,17 @@ cv::Mat RpiCamera::readFrame() {
 
     if (request->status() != libcamera::Request::RequestComplete) {
         std::cerr << "Request not complete, status: " << static_cast<int>(request->status()) << "\n";
-        camera_->queueRequest(request);
         return cv::Mat();
     }
 
     if (request->buffers().empty()) {
         std::cerr << "No buffers in request\n";
-        camera_->queueRequest(request);
         return cv::Mat();
     }
 
     libcamera::FrameBuffer* buffer = request->buffers().begin()->second;
     if (!buffer) {
         std::cerr << "Null buffer\n";
-        camera_->queueRequest(request);
         return cv::Mat();
     }
 
@@ -188,7 +185,11 @@ cv::Mat RpiCamera::readFrame() {
 
     cv::Mat frame = convertToBGR(buffer, stream_config.pixelFormat);
 
-    camera_->queueRequest(request);
+    request->reuse(libcamera::Request::ReuseBuffers);
+    if (int ret = camera_->queueRequest(request); ret) {
+        std::cerr << "queueRequest failed: " << ret << "\n";
+        return frame;
+    }
 
     return frame;
 }
