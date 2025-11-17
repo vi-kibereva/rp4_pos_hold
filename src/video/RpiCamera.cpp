@@ -201,11 +201,9 @@ cv::Mat RpiCamera::convertToBGR(libcamera::FrameBuffer* buffer,
     if (cfg.pixelFormat != libcamera::formats::BGR888)
         throw std::runtime_error("unsupported format");
 
-    std::uint8_t *data = nullptr;
-
     const libcamera::FrameBuffer::Plane &plane = buffer->planes()[0];
 
-    uint8_t *data = static_cast<uint_8*>mmap(
+    std::uint8_t *data = static_cast<std::uint_8*>mmap(
         nullptr,
         plane.length,
         PROT_READ | PROT_WRITE,
