@@ -59,7 +59,7 @@ private:
     void allocateBuffers();
     void queueRequest(libcamera::Request* request);
     void onRequestCompleted(libcamera::Request* request);
-    cv::Mat convertToBGR(libcamera::FrameBuffer* buffer, const libcamera::PixelFormat& format);
+    cv::Mat convertToBGR(libcamera::FrameBuffer* buffer, libcamera::StreamConfiguration const &cfg);
 };
 
 } // namespace video

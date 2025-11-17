@@ -185,7 +185,7 @@ cv::Mat RpiCamera::readFrame() {
 
     const libcamera::StreamConfiguration& stream_config = config_->at(0);
 
-    cv::Mat frame = convertToBGR(buffer, stream_config.pixelFormat);
+    cv::Mat frame = convertToBGR(buffer, stream_config);
 
     request->reuse(libcamera::Request::ReuseBuffers);
     if (int ret = camera_->queueRequest(request); ret) {
@@ -197,8 +197,8 @@ cv::Mat RpiCamera::readFrame() {
 }
 
 cv::Mat RpiCamera::convertToBGR(libcamera::FrameBuffer* buffer,
-                                 const libcamera::PixelFormat& format) {
-    if (format != libcamera::formats::BGR888)
+                                 const libcamera::StreamConfiguration& cfg) {
+    if (cfg.pixelFormat != libcamera::formats::BGR888)
         throw std::runtime_error("unsupported format");
 
     std::uint8_t *data = nullptr;
@@ -206,8 +206,9 @@ cv::Mat RpiCamera::convertToBGR(libcamera::FrameBuffer* buffer,
     if (!data)
         throw std::runtime_error("invalid data");
 
-    cv::Mat frame(config_->size.height, config_->size.width, CV_8UC3, data, config_->stride);
+    StreamConfiguration const &cfg = bufferPair.first->configuration();
 
+    cv::Mat frame(cfg.size.height, cfg.size.width, CV_8UC3, data, cfg.stride);
 
     return frame;
 }
