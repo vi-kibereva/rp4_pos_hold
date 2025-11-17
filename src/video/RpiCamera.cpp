@@ -45,7 +45,7 @@ void RpiCamera::setupCamera(const CameraConfig& cfg) {
     if (cfg.camera_index >= camera_manager_->cameras().size())
         throw std::runtime_error(std::string("Camera index out of range"));
 
-    camera_ = camera_manager_->get(cfg.camera_index);
+    camera_ = camera_manager_->cameras()[cfg.camera_index];
     std::cout << "Selected camera: " << camera_->id() << "\n";
 
     ret = camera_->acquire();
