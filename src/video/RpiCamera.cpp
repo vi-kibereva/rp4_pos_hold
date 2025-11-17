@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <cstdint>
 #include <cstring>
 #include <chrono>
 
@@ -62,7 +63,7 @@ void RpiCamera::setupCamera(const CameraConfig& cfg) {
     libcamera::StreamConfiguration& stream_config = config_->at(0);
     stream_config.size.width = cfg.width;
     stream_config.size.height = cfg.height;
-    stream_config.pixelFormat = libcamera::formats::YUV420;
+    stream_config.pixelFormat = libcamera::formats::BGR888;
 
     std::cout << "Requested format: " << stream_config.toString() << "\n";
 
@@ -197,56 +198,18 @@ cv::Mat RpiCamera::readFrame() {
 
 cv::Mat RpiCamera::convertToBGR(libcamera::FrameBuffer* buffer,
                                  const libcamera::PixelFormat& format) {
-    if (buffer->planes().size() < 2) {
-        std::cerr << "Invalid buffer: expected at least 2 planes for NV12\n";
-        return cv::Mat();
-    }
+    if (format != libcamera::formats::BGR888)
+        throw std::runtime_error("unsupported format");
 
-    const libcamera::FrameBuffer::Plane& y_plane = buffer->planes()[0];
-    const libcamera::FrameBuffer::Plane& uv_plane = buffer->planes()[1];
+    std::uint8_t *data = nullptr;
 
-    std::cout << "Y plane: length=" << y_plane.length << "\n";
-    std::cout << "UV plane: length=" << uv_plane.length << "\n";
+    if (!data)
+        throw std::runtime_error("invalid data");
 
-    void* y_ptr = mmap(nullptr, y_plane.length, PROT_READ, MAP_SHARED,
-                       y_plane.fd.get(), 0);
-    if (y_ptr == MAP_FAILED) {
-        std::cerr << "Failed to map Y plane\n";
-        return cv::Mat();
-    }
+    cv::Mat frame(config_->size.height, config_->size.width, CV_8UC3, data, config_->stride);
 
-    void* uv_ptr = mmap(nullptr, uv_plane.length, PROT_READ, MAP_SHARED,
-                        uv_plane.fd.get(), 0);
-    if (uv_ptr == MAP_FAILED) {
-        std::cerr << "Failed to map UV plane\n";
-        munmap(y_ptr, y_plane.length);
-        return cv::Mat();
-    }
 
-    int y_stride = width_;
-    int uv_stride = width_;
-
-    cv::Mat y_mat(height_, width_, CV_8UC1, y_ptr, y_stride);
-    cv::Mat uv_mat(height_ / 2, width_ / 2, CV_8UC2, uv_ptr, uv_stride);
-
-    std::cout << "Y mat: " << y_mat.rows << "x" << y_mat.cols << " step=" << y_mat.step << "\n";
-    std::cout << "UV mat: " << uv_mat.rows << "x" << uv_mat.cols << " step=" << uv_mat.step << "\n";
-
-    cv::imwrite("debug_y_plane.png", y_mat);
-    std::cout << "Saved Y plane to debug_y_plane.png\n";
-
-    cv::imwrite("debug_uv_plane.png", uv_mat);
-    std::cout << "Saved UV plane to debug_uv_plane.png\n";
-
-    cv::cvtColorTwoPlane(y_mat, uv_mat, bgr_frame_, cv::COLOR_YUV2BGR_NV12);
-
-    cv::imwrite("debug_bgr_converted.png", bgr_frame_);
-    std::cout << "Saved converted BGR to debug_bgr_converted.png\n";
-
-    munmap(y_ptr, y_plane.length);
-    munmap(uv_ptr, uv_plane.length);
-
-    return bgr_frame_.clone();
+    return frame;
 }
 
 RpiCamera::~RpiCamera() {
