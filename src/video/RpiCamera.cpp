@@ -190,15 +190,15 @@ cv::Mat RpiCamera::readFrame() {
 }
 
 RpiCamera::RpiCamera(std::string device) {
-
-        
     format_ctx_ = ::avformat_alloc_context();
     if (format_ctx_ == nullptr)
         throw std::runtime_error(std::string("Error allocating the AVFormatContext"));
 
     ::avdevice_register_all();
 
-    const int result = ::avformat_open_input(&format_ctx_, device.c_str(), NULL, NULL);
+    const ::AVInputFormat* fmt = ::av_find_input_format("v4l2");
+
+    const int result = ::avformat_open_input(&format_ctx_, device.c_str(), fmt, NULL);
     if (result < 0) {
         ::avformat_free_context(format_ctx_);
 
