@@ -231,7 +231,16 @@ cv::Mat RpiCamera::convertToBGR(libcamera::FrameBuffer* buffer,
     std::cout << "Y mat: " << y_mat.rows << "x" << y_mat.cols << " step=" << y_mat.step << "\n";
     std::cout << "UV mat: " << uv_mat.rows << "x" << uv_mat.cols << " step=" << uv_mat.step << "\n";
 
+    cv::imwrite("debug_y_plane.png", y_mat);
+    std::cout << "Saved Y plane to debug_y_plane.png\n";
+
+    cv::imwrite("debug_uv_plane.png", uv_mat);
+    std::cout << "Saved UV plane to debug_uv_plane.png\n";
+
     cv::cvtColorTwoPlane(y_mat, uv_mat, bgr_frame_, cv::COLOR_YUV2BGR_NV12);
+
+    cv::imwrite("debug_bgr_converted.png", bgr_frame_);
+    std::cout << "Saved converted BGR to debug_bgr_converted.png\n";
 
     munmap(y_ptr, y_plane.length);
     munmap(uv_ptr, uv_plane.length);
