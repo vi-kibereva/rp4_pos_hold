@@ -91,7 +91,7 @@ void RpiCamera::allocateBuffers() {
         if (!request)
             throw std::runtime_error(std::string("Failed to create request"));
 
-        const libcamera::FrameBuffer* buffer = buffers[i].get();
+        libcamera::FrameBuffer* buffer = buffers[i].get();
         ret = request->addBuffer(stream_, buffer);
         if (ret < 0)
             throw std::runtime_error(std::string("Failed to add buffer to request"));
