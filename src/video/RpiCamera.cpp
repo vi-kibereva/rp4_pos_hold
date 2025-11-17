@@ -11,7 +11,7 @@
 namespace video {
 
 RpiCamera::RpiCamera(unsigned int camera_index)
-    : width_(640), height_(480), started_(false) {
+    : width_(1920), height_(1080), started_(false) {
     CameraConfig config;
     config.camera_index = camera_index;
     config.width = 1920;
