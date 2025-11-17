@@ -14,8 +14,8 @@ RpiCamera::RpiCamera(unsigned int camera_index)
     : width_(640), height_(480), started_(false) {
     CameraConfig config;
     config.camera_index = camera_index;
-    config.width = 640;
-    config.height = 480;
+    config.width = 1920;
+    config.height = 1080;
     config.framerate = 30;
     setupCamera(config);
 }
@@ -92,7 +92,7 @@ void RpiCamera::setupCamera(const CameraConfig& cfg) {
 
     std::cout << "Queueing " << requests_.size() << " requests\n";
     for (auto& request : requests_)
-        queueRequest(request.get());
+        camera_->queueRequest(request.get());
 
     started_ = true;
 
@@ -131,10 +131,6 @@ void RpiCamera::allocateBuffers() {
     std::cout << "Created " << requests_.size() << " requests\n";
 }
 
-void RpiCamera::queueRequest(libcamera::Request* request) {
-    camera_->queueRequest(request);
-}
-
 void RpiCamera::onRequestCompleted(libcamera::Request* request) {
     if (request->status() == libcamera::Request::RequestCancelled) {
         std::cerr << "Request cancelled\n";
@@ -171,20 +167,20 @@ cv::Mat RpiCamera::readFrame() {
 
     if (request->status() != libcamera::Request::RequestComplete) {
         std::cerr << "Request not complete, status: " << static_cast<int>(request->status()) << "\n";
-        queueRequest(request);
+        camera_->queueRequest(request);
         return cv::Mat();
     }
 
     if (request->buffers().empty()) {
         std::cerr << "No buffers in request\n";
-        queueRequest(request);
+        camera_->queueRequest(request);
         return cv::Mat();
     }
 
     libcamera::FrameBuffer* buffer = request->buffers().begin()->second;
     if (!buffer) {
         std::cerr << "Null buffer\n";
-        queueRequest(request);
+        camera_->queueRequest(request);
         return cv::Mat();
     }
 
@@ -192,7 +188,7 @@ cv::Mat RpiCamera::readFrame() {
 
     cv::Mat frame = convertToBGR(buffer, stream_config.pixelFormat);
 
-    queueRequest(request);
+    camera_->queueRequest(request);
 
     return frame;
 }
