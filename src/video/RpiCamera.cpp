@@ -204,6 +204,9 @@ cv::Mat RpiCamera::convertToBGR(libcamera::FrameBuffer* buffer,
     const libcamera::FrameBuffer::Plane& y_plane = buffer->planes()[0];
     const libcamera::FrameBuffer::Plane& uv_plane = buffer->planes()[1];
 
+    std::cout << "Y plane: length=" << y_plane.length << "\n";
+    std::cout << "UV plane: length=" << uv_plane.length << "\n";
+
     void* y_ptr = mmap(nullptr, y_plane.length, PROT_READ, MAP_SHARED,
                        y_plane.fd.get(), 0);
     if (y_ptr == MAP_FAILED) {
@@ -219,8 +222,14 @@ cv::Mat RpiCamera::convertToBGR(libcamera::FrameBuffer* buffer,
         return cv::Mat();
     }
 
-    cv::Mat y_mat(height_, width_, CV_8UC1, y_ptr);
-    cv::Mat uv_mat(height_ / 2, width_ / 2, CV_8UC2, uv_ptr);
+    int y_stride = width_;
+    int uv_stride = width_;
+
+    cv::Mat y_mat(height_, width_, CV_8UC1, y_ptr, y_stride);
+    cv::Mat uv_mat(height_ / 2, width_ / 2, CV_8UC2, uv_ptr, uv_stride);
+
+    std::cout << "Y mat: " << y_mat.rows << "x" << y_mat.cols << " step=" << y_mat.step << "\n";
+    std::cout << "UV mat: " << uv_mat.rows << "x" << uv_mat.cols << " step=" << uv_mat.step << "\n";
 
     cv::cvtColorTwoPlane(y_mat, uv_mat, bgr_frame_, cv::COLOR_YUV2BGR_NV12);
 
