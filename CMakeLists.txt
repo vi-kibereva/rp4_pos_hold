@@ -46,21 +46,7 @@ find_package( OpenCV REQUIRED )
 
 find_package(PkgConfig REQUIRED)
 
-pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET
-  libavcodec
-  libavformat
-  libavdevice
-  libavutil
-  libswscale
-)
-
-# pkg_check_modules(LIBCAMERA REQUIRED libcamera)
-
-# find_package(liblccv REQUIRED)
-
-# include_directories(
-#   ${LIBCAMERA_INCLUDE_DIRS}
-# )
+pkg_check_modules(LIBCAMERA REQUIRED IMPORTED_TARGET libcamera)
 
 # Collect all .cpp files in src/
 file(GLOB_RECURSE ALL_SRC "${CMAKE_SOURCE_DIR}/src/*.cpp")
@@ -69,16 +55,13 @@ file(GLOB_RECURSE ALL_SRC "${CMAKE_SOURCE_DIR}/src/*.cpp")
 add_executable(rp4_pos_hold1 ${ALL_SRC})
 
 target_include_directories(rp4_pos_hold1 PRIVATE
-  ${FFMPEG_INCLUDE_DIRS}
-  ${FFMPEG_CFLAGS}
+  ${LIBCAMERA_INCLUDE_DIRS}
 )
 
-target_link_directories(rp4_pos_hold1 PRIVATE ${FFMPEG_LIBRARY_DIRS})
+target_link_directories(rp4_pos_hold1 PRIVATE ${LIBCAMERA_LIBRARY_DIRS})
 
-# target_link_libraries(rp4_pos_hold1 -llccv ${OpenCV_LIBS})
 target_link_libraries(
-  rp4_pos_hold1 PRIVATE ${FFMPEG_LIBRARIES}
+  rp4_pos_hold1 PRIVATE
+  ${LIBCAMERA_LIBRARIES}
   ${OpenCV_LIBS}
-#  lccv
 )
-# target_link_libraries(rp4_pos_hold1 liblccv)

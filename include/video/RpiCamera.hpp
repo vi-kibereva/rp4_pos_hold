@@ -1,54 +1,65 @@
 #ifndef RPI_CAMERA_HPP
 #define RPI_CAMERA_HPP
 
-extern "C" {
-#include <libavcodec/avcodec.h>
-#include <libavcodec/packet.h>
-#include <libavformat/avformat.h>
-#include <libavcodec/codec.h>
-#include <libswscale/swscale.h>
-#include <libavutil/imgutils.h>
-}
-
+#include <libcamera/libcamera.h>
 #include <opencv2/core.hpp>
 
+#include <memory>
+#include <vector>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+
 namespace video {
+
+struct CameraConfig {
+    unsigned int camera_index = 0;
+    unsigned int width = 640;
+    unsigned int height = 480;
+    unsigned int framerate = 30;
+};
 
 class RpiCamera {
 public:
     RpiCamera() = delete;
-    RpiCamera(std::string device);
-
+    RpiCamera(unsigned int camera_index);
+    RpiCamera(const CameraConfig& config);
     ~RpiCamera();
 
-    RpiCamera(const RpiCamera& other);
-    RpiCamera& operator=(const RpiCamera& other);
+    RpiCamera(const RpiCamera& other) = delete;
+    RpiCamera& operator=(const RpiCamera& other) = delete;
 
     RpiCamera(RpiCamera&& other) noexcept;
     RpiCamera& operator=(RpiCamera&& other) noexcept;
 
     cv::Mat readFrame();
 
+    unsigned int getWidth() const { return width_; }
+    unsigned int getHeight() const { return height_; }
+
 private:
-    ::AVFormatContext* format_ctx_;
-    ::AVCodecContext* codec_ctx_;
-    ::AVPacket* packet_;
-    ::AVFrame* frame_;
+    std::unique_ptr<libcamera::CameraManager> camera_manager_;
+    std::shared_ptr<libcamera::Camera> camera_;
+    std::unique_ptr<libcamera::CameraConfiguration> config_;
+    std::unique_ptr<libcamera::FrameBufferAllocator> allocator_;
+    libcamera::Stream* stream_;
 
-    ::SwsContext* sws_ctx_;
-    ::AVFrame* bgr_frame_;
-    uint8_t* bgr_buffer_;
+    cv::Mat bgr_frame_;
+    std::vector<std::unique_ptr<libcamera::Request>> requests_;
 
-    int stream_id_ = -1;
-    int width_;
-    int height_;
-    bool needs_conversion_;
+    std::queue<libcamera::Request*> completed_requests_;
+    std::mutex queue_mutex_;
+    std::condition_variable queue_cv_;
 
-    void find_codec(int codec_type, const ::AVCodec **codec, const ::AVCodecParameters **codec_params);
-    int score_format_for_opencv(::AVCodecID codec_id, ::AVPixelFormat pix_fmt);
-    void init_converter();
-    void convert_rgb24_to_bgr24(const ::AVFrame* src, ::AVFrame* dst);
+    unsigned int width_;
+    unsigned int height_;
+    bool started_;
 
+    void setupCamera(const CameraConfig& cfg);
+    void allocateBuffers();
+    void queueRequest(libcamera::Request* request);
+    void onRequestCompleted(libcamera::Request* request);
+    cv::Mat convertToBGR(libcamera::FrameBuffer* buffer, const libcamera::PixelFormat& format);
 };
 
 } // namespace video

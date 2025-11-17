@@ -1,335 +1,255 @@
-#include <iostream>
-#include <stdexcept>
-#include <unordered_map>
-
-extern "C" {
-#include <libavcodec/avcodec.h>
-#include <libavutil/pixdesc.h>
-#include <libavdevice/avdevice.h>
-}
-
 #include "video/RpiCamera.hpp"
 
+#include <iostream>
+#include <stdexcept>
+#include <cstring>
+
+#include <opencv2/imgproc.hpp>
+#include <sys/mman.h>
 
 namespace video {
 
-static const std::unordered_map<::AVPixelFormat, int> pixel_format_scores = {
-    {::AV_PIX_FMT_BGR24, 100},     // Perfect match - no conversion needed
-    {::AV_PIX_FMT_RGB24, 90},      // Trivial conversion (channel swap)
-    {::AV_PIX_FMT_YUYV422, 70},    // Simple YUV conversion
-    {::AV_PIX_FMT_UYVY422, 70},    // Simple YUV conversion
-    {::AV_PIX_FMT_YUV422P, 65},    // Planar YUV
-    {::AV_PIX_FMT_YUV420P, 65},    // Planar YUV
-    {::AV_PIX_FMT_NV12, 65},       // Semi-planar YUV
-    {::AV_PIX_FMT_NV21, 65},       // Semi-planar YUV
-};
-
-static const std::unordered_map<::AVCodecID, int> codec_scores = {
-    {::AV_CODEC_ID_MJPEG, 50},     // Good OpenCV compatibility, needs decode
-    {::AV_CODEC_ID_H264, 30},      // More complex decode
-};
-
-int RpiCamera::score_format_for_opencv(::AVCodecID codec_id, ::AVPixelFormat pix_fmt) {
-    int score = 0;
-
-    auto pix_it = pixel_format_scores.find(pix_fmt);
-    if (pix_it != pixel_format_scores.end())
-        score = pix_it->second;
-
-    if (!score) {
-        auto codec_it = codec_scores.find(codec_id);
-        if (codec_it != codec_scores.end())
-            score = std::max(score, codec_it->second);
-    }
-
-    return score;
+RpiCamera::RpiCamera(unsigned int camera_index)
+    : width_(640), height_(480), started_(false) {
+    CameraConfig config;
+    config.camera_index = camera_index;
+    config.width = 640;
+    config.height = 480;
+    config.framerate = 30;
+    setupCamera(config);
 }
 
-void RpiCamera::convert_rgb24_to_bgr24(const ::AVFrame* src, ::AVFrame* dst) {
-    const int pixels_per_row = width_ * 3;
-    for (int y = 0; y < height_; ++y) {
-        const uint8_t* src_row = src->data[0] + y * src->linesize[0];
-        uint8_t* dst_row = dst->data[0] + y * dst->linesize[0];
+RpiCamera::RpiCamera(const CameraConfig& config)
+    : width_(config.width), height_(config.height), started_(false) {
+    setupCamera(config);
+}
 
-        for (int x = 0; x < pixels_per_row; x += 3) {
-            dst_row[x + 0] = src_row[x + 2];  // B = R
-            dst_row[x + 1] = src_row[x + 1];  // G = G
-            dst_row[x + 2] = src_row[x + 0];  // R = B
-        }
+void RpiCamera::setupCamera(const CameraConfig& cfg) {
+    camera_manager_ = std::make_unique<libcamera::CameraManager>();
+
+    int ret = camera_manager_->start();
+    if (ret)
+        throw std::runtime_error(std::string("Failed to start camera manager"));
+
+    if (camera_manager_->cameras().empty())
+        throw std::runtime_error(std::string("No cameras available"));
+
+    if (cfg.camera_index >= camera_manager_->cameras().size())
+        throw std::runtime_error(std::string("Camera index out of range"));
+
+    camera_ = camera_manager_->cameras()[cfg.camera_index];
+
+    ret = camera_->acquire();
+    if (ret)
+        throw std::runtime_error(std::string("Failed to acquire camera"));
+
+    config_ = camera_->generateConfiguration({libcamera::StreamRole::VideoRecording});
+    if (!config_)
+        throw std::runtime_error(std::string("Failed to generate camera configuration"));
+
+    libcamera::StreamConfiguration& stream_config = config_->at(0);
+    stream_config.size.width = cfg.width;
+    stream_config.size.height = cfg.height;
+    stream_config.pixelFormat = libcamera::formats::YUV420;
+
+    config_->validate();
+
+    ret = camera_->configure(config_.get());
+    if (ret)
+        throw std::runtime_error(std::string("Failed to configure camera"));
+
+    stream_ = stream_config.stream();
+
+    allocateBuffers();
+
+    camera_->requestCompleted.connect(this, &RpiCamera::onRequestCompleted);
+
+    ret = camera_->start();
+    if (ret)
+        throw std::runtime_error(std::string("Failed to start camera"));
+
+    for (auto& request : requests_)
+        queueRequest(request.get());
+
+    started_ = true;
+
+    bgr_frame_ = cv::Mat(height_, width_, CV_8UC3);
+}
+
+void RpiCamera::allocateBuffers() {
+    allocator_ = std::make_unique<libcamera::FrameBufferAllocator>(camera_);
+
+    int ret = allocator_->allocate(stream_);
+    if (ret < 0)
+        throw std::runtime_error(std::string("Failed to allocate buffers"));
+
+    const std::vector<std::unique_ptr<libcamera::FrameBuffer>>& buffers =
+        allocator_->buffers(stream_);
+
+    for (unsigned int i = 0; i < buffers.size(); ++i) {
+        std::unique_ptr<libcamera::Request> request = camera_->createRequest();
+        if (!request)
+            throw std::runtime_error(std::string("Failed to create request"));
+
+        const libcamera::FrameBuffer* buffer = buffers[i].get();
+        ret = request->addBuffer(stream_, buffer);
+        if (ret < 0)
+            throw std::runtime_error(std::string("Failed to add buffer to request"));
+
+        requests_.push_back(std::move(request));
     }
 }
 
-void RpiCamera::init_converter() {
-    width_ = codec_ctx_->width;
-    height_ = codec_ctx_->height;
-    ::AVPixelFormat input_fmt = static_cast<::AVPixelFormat>(codec_ctx_->pix_fmt);
-    ::AVPixelFormat target_fmt = ::AV_PIX_FMT_BGR24;
-
-    needs_conversion_ = (input_fmt != target_fmt);
-
-    bgr_frame_ = ::av_frame_alloc();
-    if (!bgr_frame_)
-        throw std::runtime_error(std::string("Failed to allocate BGR frame"));
-
-    int num_bytes = ::av_image_get_buffer_size(target_fmt, width_, height_, 1);
-    bgr_buffer_ = static_cast<uint8_t*>(::av_malloc(num_bytes));
-    if (!bgr_buffer_) {
-        ::av_frame_free(&bgr_frame_);
-        throw std::runtime_error(std::string("Failed to allocate BGR buffer"));
-    }
-
-    ::av_image_fill_arrays(bgr_frame_->data, bgr_frame_->linesize, bgr_buffer_,
-                          target_fmt, width_, height_, 1);
-
-    if (needs_conversion_ && input_fmt != ::AV_PIX_FMT_RGB24) {
-        sws_ctx_ = ::sws_getContext(
-            width_, height_, input_fmt,
-            width_, height_, target_fmt,
-            SWS_BILINEAR, nullptr, nullptr, nullptr
-        );
-        if (!sws_ctx_) {
-            ::av_free(bgr_buffer_);
-            ::av_frame_free(&bgr_frame_);
-            throw std::runtime_error(std::string("Failed to initialize swscale context"));
-        }
-    } else {
-        sws_ctx_ = nullptr;
-    }
+void RpiCamera::queueRequest(libcamera::Request* request) {
+    camera_->queueRequest(request);
 }
 
-void RpiCamera::find_codec(int codec_type, const ::AVCodec **codec, const ::AVCodecParameters **codec_params){
-    ::avformat_find_stream_info(format_ctx_, NULL);
+void RpiCamera::onRequestCompleted(libcamera::Request* request) {
+    if (request->status() == libcamera::Request::RequestCancelled)
+        return;
 
-    int best_score = -1;
-    int best_stream_idx = -1;
-    const ::AVCodec *best_codec = nullptr;
-    const ::AVCodecParameters *best_codec_params = nullptr;
-
-    for (int i = 0; i < format_ctx_->nb_streams; i++) {
-        ::AVCodecParameters *local_codec_parameters =
-            format_ctx_->streams[i]->codecpar;
-
-        const ::AVCodec *local_codec =
-            ::avcodec_find_decoder(local_codec_parameters->codec_id);
-
-        if (local_codec->type == codec_type) {
-            // Score this stream based on OpenCV compatibility
-            int score = score_format_for_opencv(
-                local_codec_parameters->codec_id,
-                static_cast<::AVPixelFormat>(local_codec_parameters->format)
-            );
-
-            std::cout << "Stream " << i << ": "
-                      << local_codec->long_name
-                      << ", Format: " << ::av_get_pix_fmt_name(static_cast<::AVPixelFormat>(local_codec_parameters->format))
-                      << ", Score: " << score << "\n";
-
-            if (score > best_score) {
-                best_score = score;
-                best_stream_idx = i;
-                best_codec = local_codec;
-                best_codec_params = local_codec_parameters;
-            }
-        }
-    }
-
-    if (best_stream_idx >= 0) {
-        *codec = best_codec;
-        *codec_params = best_codec_params;
-        stream_id_ = best_stream_idx;
-
-        std::cout << "Selected stream " << best_stream_idx
-                  << " (score: " << best_score << "): "
-                  << best_codec->long_name
-                  << ", Format: " << ::av_get_pix_fmt_name(static_cast<::AVPixelFormat>(best_codec_params->format))
-                  << ", bit_rate: " << best_codec_params->bit_rate << "\n";
-    }
+    std::lock_guard<std::mutex> lock(queue_mutex_);
+    completed_requests_.push(request);
+    queue_cv_.notify_one();
 }
 
 cv::Mat RpiCamera::readFrame() {
-    while (true) {
-        int ret = ::av_read_frame(format_ctx_, packet_);
-        if (ret < 0)
-            return cv::Mat();
+    libcamera::Request* request = nullptr;
 
-        if (packet_->stream_index != stream_id_) {
-            ::av_packet_unref(packet_);
-            continue;
-        }
-
-        ret = ::avcodec_send_packet(codec_ctx_, packet_);
-        ::av_packet_unref(packet_);
-        if (ret < 0)
-            continue;
-
-        ret = ::avcodec_receive_frame(codec_ctx_, frame_);
-        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-            continue;
-
-        if (ret < 0)
-            return cv::Mat();
-
-        ::AVPixelFormat fmt = static_cast<::AVPixelFormat>(frame_->format);
-
-        if (fmt == ::AV_PIX_FMT_BGR24)
-            return cv::Mat(height_, width_, CV_8UC3, frame_->data[0], frame_->linesize[0]);
-
-        if (fmt == ::AV_PIX_FMT_RGB24) {
-            convert_rgb24_to_bgr24(frame_, bgr_frame_);
-            return cv::Mat(height_, width_, CV_8UC3, bgr_buffer_, bgr_frame_->linesize[0]);
-        }
-
-        if (sws_ctx_) {
-            ::sws_scale(sws_ctx_, frame_->data, frame_->linesize,
-                       0, height_, bgr_frame_->data, bgr_frame_->linesize);
-            return cv::Mat(height_, width_, CV_8UC3, bgr_buffer_, bgr_frame_->linesize[0]);
-        }
-
-        return cv::Mat();
+    {
+        std::unique_lock<std::mutex> lock(queue_mutex_);
+        queue_cv_.wait(lock, [this] { return !completed_requests_.empty(); });
+        request = completed_requests_.front();
+        completed_requests_.pop();
     }
+
+    if (!request)
+        return cv::Mat();
+
+    libcamera::FrameBuffer* buffer = request->buffers().begin()->second;
+    const libcamera::StreamConfiguration& stream_config = config_->at(0);
+
+    cv::Mat frame = convertToBGR(buffer, stream_config.pixelFormat);
+
+    queueRequest(request);
+
+    return frame;
 }
 
-RpiCamera::RpiCamera(std::string device) {
-    format_ctx_ = ::avformat_alloc_context();
-    if (format_ctx_ == nullptr)
-        throw std::runtime_error(std::string("Error allocating the AVFormatContext"));
+cv::Mat RpiCamera::convertToBGR(libcamera::FrameBuffer* buffer,
+                                 const libcamera::PixelFormat& format) {
+    const libcamera::FrameBuffer::Plane& plane_y = buffer->planes()[0];
+    const libcamera::FrameBuffer::Plane& plane_uv = buffer->planes()[1];
 
-    ::avdevice_register_all();
+    void* y_data = mmap(nullptr, plane_y.length, PROT_READ, MAP_SHARED,
+                        plane_y.fd.get(), 0);
+    if (y_data == MAP_FAILED)
+        return cv::Mat();
 
-    const ::AVInputFormat* fmt = ::av_find_input_format("v4l2");
-
-    const int result = ::avformat_open_input(&format_ctx_, device.c_str(), fmt, NULL);
-    if (result < 0) {
-        ::avformat_free_context(format_ctx_);
-
-        char errbuf[128];
-        ::av_strerror(result, errbuf, sizeof(errbuf));
-
-        throw std::runtime_error(std::string("Error opening input: ") + errbuf);
+    void* uv_data = mmap(nullptr, plane_uv.length, PROT_READ, MAP_SHARED,
+                         plane_uv.fd.get(), 0);
+    if (uv_data == MAP_FAILED) {
+        munmap(y_data, plane_y.length);
+        return cv::Mat();
     }
 
+    cv::Mat yuv_y(height_, width_, CV_8UC1, y_data);
+    cv::Mat yuv_uv(height_ / 2, width_ / 2, CV_8UC2, uv_data);
 
-    const ::AVCodec *video_codec;
-    const ::AVCodecParameters *video_codec_parameters;
+    cv::Mat yuv(height_ + height_ / 2, width_, CV_8UC1);
+    yuv_y.copyTo(yuv(cv::Rect(0, 0, width_, height_)));
 
-    find_codec(::AVMEDIA_TYPE_VIDEO, &video_codec, &video_codec_parameters);
-    if (stream_id_ == -1)
-        throw std::runtime_error(std::string("Can't find the video codec"));
+    cv::Mat uv_resized;
+    cv::resize(yuv_uv, uv_resized, cv::Size(width_, height_));
 
-    codec_ctx_ = ::avcodec_alloc_context3(video_codec);
-    if (codec_ctx_ == nullptr)
-        throw std::runtime_error(std::string("Failed to allocate memory for AVCodecContext"));
+    for (int i = 0; i < height_; ++i) {
+        for (int j = 0; j < width_; ++j) {
+            yuv.at<uint8_t>(height_ + i, j) = uv_resized.at<cv::Vec2b>(i, j)[i % 2];
+        }
+    }
 
-    if (::avcodec_parameters_to_context(codec_ctx_, video_codec_parameters) < 0)
-        throw std::runtime_error(std::string("Failed to copy codec params to codec context"));
+    cv::cvtColor(yuv, bgr_frame_, cv::COLOR_YUV2BGR_NV12);
 
-    if (::avcodec_open2(codec_ctx_, video_codec, NULL) < 0)
-        throw std::runtime_error(std::string("Failed to open codec through avcodec_open2"));
+    munmap(y_data, plane_y.length);
+    munmap(uv_data, plane_uv.length);
 
-    frame_ = ::av_frame_alloc();
-    if (!frame_)
-        throw std::runtime_error(std::string("Failed to allocate memory for AVFrame"));
-
-    packet_ = ::av_packet_alloc();
-    if (!packet_)
-        throw std::runtime_error(std::string("Failed to allocate memory for AVPacket"));
-
-    init_converter();
+    return bgr_frame_.clone();
 }
 
 RpiCamera::~RpiCamera() {
-    if (sws_ctx_)
-        ::sws_freeContext(sws_ctx_);
-    if (bgr_buffer_)
-        ::av_free(bgr_buffer_);
-    if (bgr_frame_)
-        ::av_frame_free(&bgr_frame_);
-    if (frame_)
-        ::av_frame_free(&frame_);
-    if (packet_)
-        ::av_packet_free(&packet_);
-    if (codec_ctx_)
-        ::avcodec_free_context(&codec_ctx_);
-    if (format_ctx_)
-        ::avformat_close_input(&format_ctx_);
-}
+    if (started_ && camera_) {
+        camera_->stop();
+        started_ = false;
+    }
 
-RpiCamera::RpiCamera(const RpiCamera& other) {
-    throw std::runtime_error(std::string("RpiCamera cannot be copied"));
-}
+    requests_.clear();
+    allocator_.reset();
 
-RpiCamera& RpiCamera::operator=(const RpiCamera& other) {
-    throw std::runtime_error(std::string("RpiCamera cannot be copied"));
+    if (camera_) {
+        camera_->release();
+        camera_.reset();
+    }
+
+    if (camera_manager_) {
+        camera_manager_->stop();
+        camera_manager_.reset();
+    }
 }
 
 RpiCamera::RpiCamera(RpiCamera&& other) noexcept
-    : format_ctx_(other.format_ctx_),
-      codec_ctx_(other.codec_ctx_),
-      packet_(other.packet_),
-      frame_(other.frame_),
-      sws_ctx_(other.sws_ctx_),
-      bgr_frame_(other.bgr_frame_),
-      bgr_buffer_(other.bgr_buffer_),
-      stream_id_(other.stream_id_),
+    : camera_manager_(std::move(other.camera_manager_)),
+      camera_(std::move(other.camera_)),
+      config_(std::move(other.config_)),
+      allocator_(std::move(other.allocator_)),
+      stream_(other.stream_),
+      bgr_frame_(std::move(other.bgr_frame_)),
+      requests_(std::move(other.requests_)),
       width_(other.width_),
       height_(other.height_),
-      needs_conversion_(other.needs_conversion_) {
+      started_(other.started_) {
 
-    other.format_ctx_ = nullptr;
-    other.codec_ctx_ = nullptr;
-    other.packet_ = nullptr;
-    other.frame_ = nullptr;
-    other.sws_ctx_ = nullptr;
-    other.bgr_frame_ = nullptr;
-    other.bgr_buffer_ = nullptr;
-    other.stream_id_ = -1;
+    other.stream_ = nullptr;
     other.width_ = 0;
     other.height_ = 0;
-    other.needs_conversion_ = false;
+    other.started_ = false;
 }
 
 RpiCamera& RpiCamera::operator=(RpiCamera&& other) noexcept {
     if (this != &other) {
-        if (sws_ctx_)
-            ::sws_freeContext(sws_ctx_);
-        if (bgr_buffer_)
-            ::av_free(bgr_buffer_);
-        if (bgr_frame_)
-            ::av_frame_free(&bgr_frame_);
-        if (frame_)
-            ::av_frame_free(&frame_);
-        if (packet_)
-            ::av_packet_free(&packet_);
-        if (codec_ctx_)
-            ::avcodec_free_context(&codec_ctx_);
-        if (format_ctx_)
-            ::avformat_close_input(&format_ctx_);
+        if (started_ && camera_) {
+            camera_->stop();
+        }
 
-        format_ctx_ = other.format_ctx_;
-        codec_ctx_ = other.codec_ctx_;
-        packet_ = other.packet_;
-        frame_ = other.frame_;
-        sws_ctx_ = other.sws_ctx_;
-        bgr_frame_ = other.bgr_frame_;
-        bgr_buffer_ = other.bgr_buffer_;
-        stream_id_ = other.stream_id_;
+        requests_.clear();
+        allocator_.reset();
+
+        if (camera_) {
+            camera_->release();
+            camera_.reset();
+        }
+
+        if (camera_manager_) {
+            camera_manager_->stop();
+            camera_manager_.reset();
+        }
+
+        camera_manager_ = std::move(other.camera_manager_);
+        camera_ = std::move(other.camera_);
+        config_ = std::move(other.config_);
+        allocator_ = std::move(other.allocator_);
+        stream_ = other.stream_;
+        bgr_frame_ = std::move(other.bgr_frame_);
+        requests_ = std::move(other.requests_);
         width_ = other.width_;
         height_ = other.height_;
-        needs_conversion_ = other.needs_conversion_;
+        started_ = other.started_;
 
-        other.format_ctx_ = nullptr;
-        other.codec_ctx_ = nullptr;
-        other.packet_ = nullptr;
-        other.frame_ = nullptr;
-        other.sws_ctx_ = nullptr;
-        other.bgr_frame_ = nullptr;
-        other.bgr_buffer_ = nullptr;
-        other.stream_id_ = -1;
+        other.stream_ = nullptr;
         other.width_ = 0;
         other.height_ = 0;
-        other.needs_conversion_ = false;
+        other.started_ = false;
     }
     return *this;
 }
 
-}
+} // namespace video
