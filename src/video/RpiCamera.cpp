@@ -206,8 +206,6 @@ cv::Mat RpiCamera::convertToBGR(libcamera::FrameBuffer* buffer,
     if (!data)
         throw std::runtime_error("invalid data");
 
-    libcamera::StreamConfiguration const &cfg = bufferPair.first->configuration();
-
     cv::Mat frame(cfg.size.height, cfg.size.width, CV_8UC3, data, cfg.stride);
 
     return frame;
