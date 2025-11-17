@@ -203,6 +203,17 @@ cv::Mat RpiCamera::convertToBGR(libcamera::FrameBuffer* buffer,
 
     std::uint8_t *data = nullptr;
 
+    const libcamera::FrameBuffer::Plane &plane = buffer->planes()[0];
+
+    uint8_t *data = static_cast<uint_8*>mmap(
+        nullptr,
+        plane.length,
+        PROT_READ | PROT_WRITE,
+        MAP_SHARED,
+        plane.fd.get(),
+        plane.offset
+    );
+
     if (!data)
         throw std::runtime_error("invalid data");
 
