@@ -219,13 +219,10 @@ cv::Mat RpiCamera::convertToBGR(libcamera::FrameBuffer* buffer,
         return cv::Mat();
     }
 
-    cv::Mat yuv_nv12(height_ * 3 / 2, width_, CV_8UC1);
+    cv::Mat y_mat(height_, width_, CV_8UC1, y_ptr);
+    cv::Mat uv_mat(height_ / 2, width_ / 2, CV_8UC2, uv_ptr);
 
-    std::memcpy(yuv_nv12.data, y_ptr, width_ * height_);
-
-    std::memcpy(yuv_nv12.data + width_ * height_, uv_ptr, width_ * height_ / 2);
-
-    cv::cvtColor(yuv_nv12, bgr_frame_, cv::COLOR_YUV2BGR_NV12);
+    cv::cvtColorTwoPlane(y_mat, uv_mat, bgr_frame_, cv::COLOR_YUV2BGR_NV12);
 
     munmap(y_ptr, y_plane.length);
     munmap(uv_ptr, uv_plane.length);
