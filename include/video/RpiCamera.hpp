@@ -9,6 +9,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <map>
 
 namespace video {
 
@@ -29,8 +30,8 @@ public:
     RpiCamera(const RpiCamera& other) = delete;
     RpiCamera& operator=(const RpiCamera& other) = delete;
 
-    RpiCamera(RpiCamera&& other) noexcept;
-    RpiCamera& operator=(RpiCamera&& other) noexcept;
+    RpiCamera(RpiCamera&& other) = delete;
+    RpiCamera& operator=(RpiCamera&& other) = delete;
 
     cv::Mat readFrame();
 
@@ -44,7 +45,7 @@ private:
     std::unique_ptr<libcamera::FrameBufferAllocator> allocator_;
     libcamera::Stream* stream_;
 
-    cv::Mat bgr_frame_;
+    std::map<libcamera::FrameBuffer*, void*> mapped_buffers_;
     std::vector<std::unique_ptr<libcamera::Request>> requests_;
 
     std::queue<libcamera::Request*> completed_requests_;
@@ -57,7 +58,8 @@ private:
 
     void setupCamera(const CameraConfig& cfg);
     void allocateBuffers();
-    void queueRequest(libcamera::Request* request);
+    void mapBuffers();
+    void unmapBuffers();
     void onRequestCompleted(libcamera::Request* request);
     cv::Mat convertToBGR(libcamera::FrameBuffer* buffer, libcamera::StreamConfiguration const &cfg);
 };

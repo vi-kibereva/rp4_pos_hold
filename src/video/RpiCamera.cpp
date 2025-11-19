@@ -82,6 +82,7 @@ void RpiCamera::setupCamera(const CameraConfig& cfg) {
         throw std::runtime_error(std::string("Failed to get stream from configuration"));
 
     allocateBuffers();
+    mapBuffers();
 
     std::cout << "Connecting request completion callback\n";
     camera_->requestCompleted.connect(this, &RpiCamera::onRequestCompleted);
@@ -97,8 +98,6 @@ void RpiCamera::setupCamera(const CameraConfig& cfg) {
         camera_->queueRequest(request.get());
 
     started_ = true;
-
-    bgr_frame_ = cv::Mat(height_, width_, CV_8UC3);
     std::cout << "Camera setup complete\n";
 }
 
@@ -131,6 +130,47 @@ void RpiCamera::allocateBuffers() {
         requests_.push_back(std::move(request));
     }
     std::cout << "Created " << requests_.size() << " requests\n";
+}
+
+void RpiCamera::mapBuffers() {
+    const std::vector<std::unique_ptr<libcamera::FrameBuffer>>& buffers =
+        allocator_->buffers(stream_);
+
+    for (const auto& buffer_ptr : buffers) {
+        libcamera::FrameBuffer* buffer = buffer_ptr.get();
+        const libcamera::FrameBuffer::Plane& plane = buffer->planes()[0];
+
+        void* data = mmap(
+            nullptr,
+            plane.length,
+            PROT_READ | PROT_WRITE,
+            MAP_SHARED,
+            plane.fd.get(),
+            plane.offset
+        );
+
+        if (data == MAP_FAILED) {
+            unmapBuffers(); // Clean up any successfully mapped buffers
+            throw std::runtime_error("Failed to mmap buffer");
+        }
+
+        mapped_buffers_[buffer] = data;
+    }
+
+    std::cout << "Mapped " << mapped_buffers_.size() << " buffers\n";
+}
+
+void RpiCamera::unmapBuffers() {
+    for (auto& pair : mapped_buffers_) {
+        libcamera::FrameBuffer* buffer = pair.first;
+        void* data = pair.second;
+        const libcamera::FrameBuffer::Plane& plane = buffer->planes()[0];
+
+        if (munmap(data, plane.length) != 0) {
+            std::cerr << "Failed to munmap buffer\n";
+        }
+    }
+    mapped_buffers_.clear();
 }
 
 void RpiCamera::onRequestCompleted(libcamera::Request* request) {
@@ -187,11 +227,12 @@ cv::Mat RpiCamera::readFrame() {
 
     cv::Mat frame = convertToBGR(buffer, stream_config);
 
-    // request->reuse(libcamera::Request::ReuseBuffers);
-    // if (int ret = camera_->queueRequest(request); ret) {
-    //     std::cerr << "queueRequest failed: " << ret << "\n";
-    //     return frame;
-    // }
+    // Requeue the request for continuous capture
+    request->reuse(libcamera::Request::ReuseBuffers);
+    if (int ret = camera_->queueRequest(request); ret) {
+        std::cerr << "queueRequest failed: " << ret << "\n";
+        // Still return the frame we captured
+    }
 
     return frame;
 }
@@ -201,23 +242,18 @@ cv::Mat RpiCamera::convertToBGR(libcamera::FrameBuffer* buffer,
     if (cfg.pixelFormat != libcamera::formats::BGR888)
         throw std::runtime_error("unsupported format");
 
-    const libcamera::FrameBuffer::Plane &plane = buffer->planes()[0];
+    // Look up the pre-mapped memory for this buffer
+    auto it = mapped_buffers_.find(buffer);
+    if (it == mapped_buffers_.end())
+        throw std::runtime_error("Buffer not mapped");
 
-    std::uint8_t *data = reinterpret_cast<std::uint8_t*>(mmap(
-        nullptr,
-        plane.length,
-        PROT_READ | PROT_WRITE,
-        MAP_SHARED,
-        plane.fd.get(),
-        plane.offset
-    ));
+    std::uint8_t* data = reinterpret_cast<std::uint8_t*>(it->second);
 
-    if (!data)
-        throw std::runtime_error("invalid data");
+    // Create a Mat that references the mmap'd memory
+    cv::Mat temp(cfg.size.height, cfg.size.width, CV_8UC3, data, cfg.stride);
 
-    cv::Mat frame(cfg.size.height, cfg.size.width, CV_8UC3, data, cfg.stride);
-
-    return frame;
+    // Clone to create a copy that owns its own memory
+    return temp.clone();
 }
 
 RpiCamera::~RpiCamera() {
@@ -226,6 +262,7 @@ RpiCamera::~RpiCamera() {
         started_ = false;
     }
 
+    unmapBuffers();
     requests_.clear();
     allocator_.reset();
 
@@ -238,62 +275,6 @@ RpiCamera::~RpiCamera() {
         camera_manager_->stop();
         camera_manager_.reset();
     }
-}
-
-RpiCamera::RpiCamera(RpiCamera&& other) noexcept
-    : camera_manager_(std::move(other.camera_manager_)),
-      camera_(std::move(other.camera_)),
-      config_(std::move(other.config_)),
-      allocator_(std::move(other.allocator_)),
-      stream_(other.stream_),
-      bgr_frame_(std::move(other.bgr_frame_)),
-      requests_(std::move(other.requests_)),
-      width_(other.width_),
-      height_(other.height_),
-      started_(other.started_) {
-
-    other.stream_ = nullptr;
-    other.width_ = 0;
-    other.height_ = 0;
-    other.started_ = false;
-}
-
-RpiCamera& RpiCamera::operator=(RpiCamera&& other) noexcept {
-    if (this != &other) {
-        if (started_ && camera_) {
-            camera_->stop();
-        }
-
-        requests_.clear();
-        allocator_.reset();
-
-        if (camera_) {
-            camera_->release();
-            camera_.reset();
-        }
-
-        if (camera_manager_) {
-            camera_manager_->stop();
-            camera_manager_.reset();
-        }
-
-        camera_manager_ = std::move(other.camera_manager_);
-        camera_ = std::move(other.camera_);
-        config_ = std::move(other.config_);
-        allocator_ = std::move(other.allocator_);
-        stream_ = other.stream_;
-        bgr_frame_ = std::move(other.bgr_frame_);
-        requests_ = std::move(other.requests_);
-        width_ = other.width_;
-        height_ = other.height_;
-        started_ = other.started_;
-
-        other.stream_ = nullptr;
-        other.width_ = 0;
-        other.height_ = 0;
-        other.started_ = false;
-    }
-    return *this;
 }
 
 } // namespace video
