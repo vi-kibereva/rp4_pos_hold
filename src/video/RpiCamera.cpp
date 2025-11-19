@@ -249,11 +249,20 @@ cv::Mat RpiCamera::convertToBGR(libcamera::FrameBuffer* buffer,
 
     std::uint8_t* data = reinterpret_cast<std::uint8_t*>(it->second);
 
-    // Create a Mat that references the mmap'd memory
-    cv::Mat temp(cfg.size.height, cfg.size.width, CV_8UC3, data, cfg.stride);
+    // Create a new Mat with tightly-packed rows
+    cv::Mat frame;
+    frame.create(cfg.size.height, cfg.size.width, CV_8UC3);
 
-    // Clone to create a copy that owns its own memory
-    return temp.clone();
+    // Copy row-by-row to handle stride properly
+    // (stride may be larger than width*3 due to alignment/padding)
+    unsigned int line_size = cfg.size.width * 3;  // BGR888 = 3 bytes per pixel
+    std::uint8_t* src_ptr = data;
+
+    for (unsigned int row = 0; row < cfg.size.height; row++, src_ptr += cfg.stride) {
+        std::memcpy(frame.ptr(row), src_ptr, line_size);
+    }
+
+    return frame;
 }
 
 RpiCamera::~RpiCamera() {
