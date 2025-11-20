@@ -47,4 +47,5 @@ target_link_libraries(
   rp4_pos_hold1 PRIVATE
   ${LIBCAMERA_LIBRARIES}
   ${OpenCV_LIBS}
+  lccv
 )

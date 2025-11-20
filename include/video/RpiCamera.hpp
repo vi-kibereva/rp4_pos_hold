@@ -7,7 +7,6 @@
 #include <atomic>
 
 #include <lccv.hpp>
-#include <libcamera_app.hpp>
 #include <opencv2/opencv.hpp>
 
 namespace video {
