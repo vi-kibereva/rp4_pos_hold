@@ -1,69 +1,40 @@
-#ifndef RPI_CAMERA_HPP
-#define RPI_CAMERA_HPP
-
-#include <libcamera/libcamera.h>
-#include <opencv2/core.hpp>
-
-#include <memory>
-#include <vector>
-#include <queue>
-#include <mutex>
-#include <condition_variable>
-#include <map>
+#include <functional>
+#include <opencv2/opencv.hpp>
+#include <thread>
+#include <optional>
 
 namespace video {
-
-struct CameraConfig {
-    unsigned int camera_index = 0;
-    unsigned int width = 640;
-    unsigned int height = 480;
-    unsigned int framerate = 30;
-};
 
 class RpiCamera {
 public:
     RpiCamera() = delete;
-    RpiCamera(unsigned int camera_index);
-    RpiCamera(const CameraConfig& config);
-    ~RpiCamera();
+    RpiCamera(
+        std::function<void(cv::Mat)> set_latest, 
+        std::uint32_t height_ = 1080,
+        std::uint32_t width_ = 1920,
+        int framerate_ = 30
+    );
 
-    RpiCamera(const RpiCamera& other) = delete;
-    RpiCamera& operator=(const RpiCamera& other) = delete;
-
-    RpiCamera(RpiCamera&& other) = delete;
-    RpiCamera& operator=(RpiCamera&& other) = delete;
-
-    cv::Mat readFrame();
-
-    unsigned int getWidth() const { return width_; }
-    unsigned int getHeight() const { return height_; }
+    void start();
+    void stop();
 
 private:
-    std::unique_ptr<libcamera::CameraManager> camera_manager_;
-    std::shared_ptr<libcamera::Camera> camera_;
-    std::unique_ptr<libcamera::CameraConfiguration> config_;
-    std::unique_ptr<libcamera::FrameBufferAllocator> allocator_;
-    libcamera::Stream* stream_;
+    std::function<void(cv::Mat)> set_latest_;
 
-    std::map<libcamera::FrameBuffer*, void*> mapped_buffers_;
-    std::vector<std::unique_ptr<libcamera::Request>> requests_;
+    std::uint32_t height_;
+    std::uint32_t width_;
+    int framerate_;
 
-    std::queue<libcamera::Request*> completed_requests_;
-    std::mutex queue_mutex_;
-    std::condition_variable queue_cv_;
+    std::atomic<bool> running_;
 
-    unsigned int width_;
-    unsigned int height_;
-    bool started_;
+    lccv::PiCamera cam_;
+    cv::Mat producer_buffer_;
 
-    void setupCamera(const CameraConfig& cfg);
-    void allocateBuffers();
-    void mapBuffers();
-    void unmapBuffers();
-    void onRequestCompleted(libcamera::Request* request);
-    cv::Mat convertToBGR(libcamera::FrameBuffer* buffer, libcamera::StreamConfiguration const &cfg);
+    std::optional<std::thread> producer_thread_ = std::nullopt;
+
+    static void producer_thread(RpiCamera* rpi_cam);
 };
 
-} // namespace video
+}
 
-#endif // RPI_CAMERA_HPP
+#endif // !RPI_CAMERA_HPP
