@@ -12,16 +12,20 @@ RpiCamera::RpiCamera(
         std::uint32_t height,
         std::uint32_t width,
         int framerate
-    ) : shared_buffer_(shared_buffer), 
+    ) : shared_buffer_(shared_buffer),
         mtx_(mtx),
         new_data_available_(new_data_available),
-        running_(true),
+        running_(false),
         cam_(),
         producer_buffer_(height, width, CV_8UC3) { // TODO: idk
     cam_.options->video_width = width;
     cam_.options->video_height = height;
     cam_.options->framerate = framerate;
     cam_.options->verbose = true;
+}
+
+RpiCamera::~RpiCamera() {
+    stop();
 }
 
 void RpiCamera::start() {
@@ -43,18 +47,25 @@ void RpiCamera::stop() {
 }
 
 void RpiCamera::producer_thread(RpiCamera* rpi_cam) {
-    while (rpi_cam->running_) {
-        if (!rpi_cam->cam_.getVideoFrame(rpi_cam->producer_buffer_, 35)) {
-            std::cerr << "Timeout!" << std::endl;
-            continue;
+    try {
+        while (rpi_cam->running_) {
+            if (!rpi_cam->cam_.getVideoFrame(rpi_cam->producer_buffer_, 35)) {
+                std::cerr << "Timeout!" << std::endl;
+                continue;
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(rpi_cam->mtx_);
+                std::swap(rpi_cam->shared_buffer_, rpi_cam->producer_buffer_);
+                rpi_cam->new_data_available_ = true;
+            }
         }
-
-        rpi_cam->mtx_.lock();
-
-        std::swap(rpi_cam->shared_buffer_, rpi_cam->producer_buffer_);
-        rpi_cam->new_data_available_ = true;
-
-        rpi_cam->mtx_.unlock();
+    } catch (const std::exception& e) {
+        std::cerr << "Exception in producer thread: " << e.what() << std::endl;
+        rpi_cam->running_ = false;
+    } catch (...) {
+        std::cerr << "Unknown exception in producer thread" << std::endl;
+        rpi_cam->running_ = false;
     }
 }
 

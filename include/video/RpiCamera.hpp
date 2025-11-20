@@ -22,6 +22,7 @@ public:
         std::uint32_t width = 1920,
         int framerate = 30
     );
+    ~RpiCamera();
 
     void start();
     void stop();

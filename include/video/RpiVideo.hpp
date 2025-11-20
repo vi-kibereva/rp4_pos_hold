@@ -13,6 +13,7 @@ namespace video {
 class RpiVideo {
 public:
     explicit RpiVideo(std::uint32_t height = 1080, std::uint32_t width = 1920, int framerate = 30);
+    ~RpiVideo();
 
     void start_camera();
     void stop_camera();
