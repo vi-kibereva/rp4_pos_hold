@@ -1,3 +1,4 @@
+#include <mutex>
 #include <thread>
 
 #include "video/RpiCamera.hpp"
@@ -5,14 +6,15 @@
 namespace video {
 
 RpiCamera::RpiCamera(
-        std::function<void(cv::Mat)> set_latest, 
+        cv::Mat &shared_buffer,
+        bool &new_data_available,
+        std::mutex &mtx,
         std::uint32_t height,
         std::uint32_t width,
         int framerate
-    ) : set_latest_(set_latest), 
-        height_(height), 
-        width_(width),
-        framerate_(framerate), 
+    ) : shared_buffer_(shared_buffer), 
+        mtx_(mtx),
+        new_data_available_(new_data_available),
         running_(true),
         cam_(),
         producer_buffer_(height, width, CV_8UC3) { // TODO: idk
@@ -24,15 +26,18 @@ RpiCamera::RpiCamera(
 
 void RpiCamera::start() {
     running_ = true;
-    if (!producer_thread_.has_value())
+    if (!producer_thread_.has_value()) {
+        cam_.startVideo();
         producer_thread_ = std::thread(producer_thread, this);
+    }
 }
 
 void RpiCamera::stop() {
     running_ = false;
+    cam_.stopVideo();
 
     if (producer_thread_.has_value() && producer_thread_->joinable())
-        producer_thread_->join(); // TODO: what if has_value and not joinable?
+        producer_thread_->join();
 
     producer_thread_ = std::nullopt;
 }
@@ -44,9 +49,13 @@ void RpiCamera::producer_thread(RpiCamera* rpi_cam) {
             continue;
         }
 
-        rpi_cam->set_latest_(rpi_cam->producer_buffer_);
-    }
+        rpi_cam->mtx_.lock();
 
+        std::swap(rpi_cam->shared_buffer_, rpi_cam->producer_buffer_);
+        rpi_cam->new_data_available_ = true;
+
+        rpi_cam->mtx_.unlock();
+    }
 }
 
 }

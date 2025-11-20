@@ -1,4 +1,7 @@
-#include <functional>
+#ifndef RPI_CAMERA_HPP
+#define RPI_CAMERA_HPP
+
+#include <mutex>
 #include <opencv2/opencv.hpp>
 #include <thread>
 #include <optional>
@@ -9,26 +12,27 @@ class RpiCamera {
 public:
     RpiCamera() = delete;
     RpiCamera(
-        std::function<void(cv::Mat)> set_latest, 
-        std::uint32_t height_ = 1080,
-        std::uint32_t width_ = 1920,
-        int framerate_ = 30
+        cv::Mat &shared_buffer,
+        bool &new_data_avaliable,
+        std::mutex &mtx,
+        std::uint32_t height = 1080,
+        std::uint32_t width = 1920,
+        int framerate = 30
     );
 
     void start();
     void stop();
 
 private:
-    std::function<void(cv::Mat)> set_latest_;
-
-    std::uint32_t height_;
-    std::uint32_t width_;
-    int framerate_;
-
     std::atomic<bool> running_;
 
     lccv::PiCamera cam_;
+
     cv::Mat producer_buffer_;
+    cv::Mat &shared_buffer_;
+    bool &new_data_available_;
+
+    std::mutex &mtx_;
 
     std::optional<std::thread> producer_thread_ = std::nullopt;
 
