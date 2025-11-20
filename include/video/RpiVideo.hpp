@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <mutex>
+
 #include <opencv2/opencv.hpp>
 
 #include "video/RpiCamera.hpp"
@@ -11,8 +12,7 @@ namespace video {
 
 class RpiVideo {
 public:
-    RpiVideo();
-    RpiVideo(std::uint32_t height, std::uint32_t width, int framerate);
+    explicit RpiVideo(std::uint32_t height = 1080, std::uint32_t width = 1920, int framerate = 30);
 
     void start_camera();
     void stop_camera();

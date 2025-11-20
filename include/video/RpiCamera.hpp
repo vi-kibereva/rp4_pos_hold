@@ -2,9 +2,12 @@
 #define RPI_CAMERA_HPP
 
 #include <mutex>
-#include <opencv2/opencv.hpp>
 #include <thread>
 #include <optional>
+#include <atomic>
+
+#include <lccv.hpp>
+#include <opencv2/opencv.hpp>
 
 namespace video {
 
