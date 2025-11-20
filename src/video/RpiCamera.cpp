@@ -49,7 +49,7 @@ void RpiCamera::stop() {
 void RpiCamera::producer_thread(RpiCamera* rpi_cam) {
     try {
         while (rpi_cam->running_) {
-            if (!rpi_cam->cam_.getVideoFrame(rpi_cam->producer_buffer_, 35)) {
+            if (!rpi_cam->cam_.getVideoFrame(rpi_cam->producer_buffer_, 935)) {
                 std::cerr << "Timeout!" << std::endl;
                 continue;
             }
