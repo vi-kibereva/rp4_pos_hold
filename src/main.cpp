@@ -5,7 +5,6 @@
 int main() {
     auto video = video::RpiVideo();
     video.start_camera();
-    cv::Mat frame = video.get_frame();
     cv::VideoWriter writer(
         "output.mp4",
         cv::VideoWriter::fourcc('m','p','4','v'),
@@ -18,6 +17,7 @@ int main() {
     }
 
     for (int i = 0; i<300; ++i) {
+        cv::Mat frame = video.get_frame();
         writer.write(frame);
     }
     video.stop_camera();
