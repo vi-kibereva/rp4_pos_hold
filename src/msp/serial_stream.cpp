@@ -96,8 +96,9 @@ SerialStream::~SerialStream() noexcept {
 }
 
 size_t SerialStream::read(std::uint8_t *buffer, size_t size) {
-	for (size_t n = 0; n < size;) {
-		ssize_t res += ::read(serial_fd_, buffer+n, size-n);
+    size_t n = 0;
+	while (n < size) {
+		ssize_t res = ::read(serial_fd_, buffer + n, size - n);
 		const int e = errno;
 
         if (res < 0) {
