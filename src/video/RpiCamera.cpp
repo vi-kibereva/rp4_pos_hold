@@ -12,12 +12,12 @@ RpiCamera::RpiCamera(
         std::uint32_t height,
         std::uint32_t width,
         int framerate
-    ) : shared_buffer_(shared_buffer),
-        mtx_(mtx),
-        new_data_available_(new_data_available),
-        running_(false),
+    ) : running_(false),
         cam_(),
-        producer_buffer_(height, width, CV_8UC3) { // TODO: idk
+        producer_buffer_(height, width, CV_8UC3),
+        shared_buffer_(shared_buffer),
+        new_data_available_(new_data_available),
+        mtx_(mtx) {
     cam_.options->video_width = width;
     cam_.options->video_height = height;
     cam_.options->framerate = framerate;

@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <ostream>
+#include <sys/_types/_ssize_t.h>
 #include <sys/ioctl.h>
 #include <sys/termios.h>
 #include <termios.h>
@@ -96,24 +97,25 @@ SerialStream::~SerialStream() noexcept {
 }
 
 size_t SerialStream::read(std::uint8_t *buffer, size_t size) {
-	ssize_t n = 0;
-	for (;;) {
-		n += ::read(serial_fd_, buffer+n, size-n);
-
+	for (size_t n = 0; n < size;) {
+		ssize_t res += ::read(serial_fd_, buffer+n, size-n);
 		const int e = errno;
 
-		if (n >= size)
-			return static_cast<std::size_t>(n);
+        if (res < 0) {
+            switch (e) {
+            case EINTR:
+                continue; // retry if interrupted
+            case EAGAIN:
+                return 0; // timeouts/nonblocking as "no data"
+            default:
+                utils::throw_errno(e, "Error reading serial input with read");
+            }
+        }
 
-		switch (e) {
-		case EINTR:
-			continue; // retry if interrupted
-		case EAGAIN:
-			return 0; // timeouts/nonblocking as "no data"
-		default:
-			utils::throw_errno(e, "Error reading serial input with read");
-		}
+        n += static_cast<size_t>(res);
 	}
+
+    return static_cast<std::size_t>(n);
 }
 
 size_t SerialStream::write(std::uint8_t *data, size_t size) {
