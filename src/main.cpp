@@ -16,7 +16,9 @@ int main() {
         return -1;
     }
 
-    for (int i = 0; i<300; ++i) {
+    for (int i = 0; i< 300; ++i) {
+        if (i % 30 == 0)
+            std::cout << i << "/300" << std::endl;
         cv::Mat frame = video.get_frame();
         writer.write(frame);
     }
