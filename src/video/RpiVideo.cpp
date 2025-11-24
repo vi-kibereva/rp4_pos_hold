@@ -10,7 +10,8 @@ namespace video {
 RpiVideo::RpiVideo(std::uint32_t height, std::uint32_t width, int framerate) :
     shared_frame_(height, width, CV_8UC3),
     mtx_(), new_data_avaliable_(false),
-    camera_(shared_frame_, new_data_avaliable_, mtx_, height, width, framerate) {}
+    camera_(shared_frame_, new_data_avaliable_, mtx_, height, width, framerate),
+    height_(height), width_(width) {}
 
 RpiVideo::~RpiVideo() {
     stop_camera();
@@ -22,7 +23,7 @@ void RpiVideo::stop_camera() { camera_.stop(); }
 cv::Mat RpiVideo::get_frame() {
     std::lock_guard<std::mutex> lock(mtx_);
 
-    cv::Mat frame(height, width, CV_8UC3);
+    cv::Mat frame(height_, width, CV_8UC3);
     std::swap(frame, shared_frame_);
 
     return frame;

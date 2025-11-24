@@ -26,6 +26,9 @@ private:
     bool new_data_avaliable_;
 
     RpiCamera camera_;
+
+    std::uint32_t height_;
+    std::uint32_t width_;
 };
 
 } // namespace video
