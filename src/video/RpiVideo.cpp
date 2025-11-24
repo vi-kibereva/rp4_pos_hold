@@ -23,7 +23,7 @@ void RpiVideo::stop_camera() { camera_.stop(); }
 cv::Mat RpiVideo::get_frame() {
     std::lock_guard<std::mutex> lock(mtx_);
 
-    cv::Mat frame(height_, width, CV_8UC3);
+    cv::Mat frame(height_, width_, CV_8UC3);
     std::swap(frame, shared_frame_);
 
     return frame;
