@@ -12,7 +12,6 @@ def plot_data():
         print("Did you run the Docker container first?")
         return
 
-    # Unzip the path data
     path = data['path']
     x_coords = [pos[0] for pos in path]
     y_coords = [pos[1] for pos in path]
@@ -35,9 +34,8 @@ def plot_data():
     plt.ylabel('Y Position')
     plt.legend()
     plt.grid(True)
-    plt.axis('equal') # Ensure X and Y axes have the same scale
+    plt.axis('equal')
 
-    # Save the plot to a file and show it
     plt.savefig('drone_path.png')
     print("Plot saved to drone_path.png")
     plt.show()

@@ -129,7 +129,7 @@ size_t SerialStream::write(std::uint8_t *data, size_t size) {
 
 		switch (e) {
 		case EINTR:
-			continue; // retry if interrupted
+			continue;
 		default:
 			utils::throw_errno(e, "Error reading serial input with read");
 		}
@@ -152,4 +152,4 @@ size_t SerialStream::available() {
 	return static_cast<size_t>(n);
 }
 
-} // namespace msp
+}

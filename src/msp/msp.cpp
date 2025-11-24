@@ -19,7 +19,7 @@ AttitudeData Msp::attitude() {
 }
 
 StatusData Msp::status() {
-	std::uint8_t payload[32]; // MSP_STATUS can be longer with extended flags
+	std::uint8_t payload[32];
 	std::uint8_t recv_size = 0;
 
 	if (!bitaflught_msp_.request(MSP_STATUS, payload, sizeof(payload),
@@ -71,4 +71,4 @@ void Msp::setRawRc(const SetRawRcData &data) {
 	}
 }
 
-} // namespace msp
+}
