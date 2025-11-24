@@ -30,15 +30,12 @@ RpiCamera::~RpiCamera() {
 
 void RpiCamera::start() {
     running_ = true;
-    if (!producer_thread_.has_value()) {
-        cam_.startVideo();
+    if (!producer_thread_.has_value())
         producer_thread_ = std::thread(producer_thread, this);
-    }
 }
 
 void RpiCamera::stop() {
     running_ = false;
-    cam_.stopVideo();
 
     if (producer_thread_.has_value() && producer_thread_->joinable())
         producer_thread_->join();
@@ -48,6 +45,8 @@ void RpiCamera::stop() {
 
 void RpiCamera::producer_thread(RpiCamera* rpi_cam) {
     try {
+        rpi_cam->cam_.startVideo();
+
         while (rpi_cam->running_) {
             if (!rpi_cam->cam_.getVideoFrame(rpi_cam->producer_buffer_, 935)) {
                 std::cerr << "Timeout!" << std::endl;
@@ -60,6 +59,8 @@ void RpiCamera::producer_thread(RpiCamera* rpi_cam) {
                 rpi_cam->new_data_available_ = true;
             }
         }
+
+        cam_.stopVideo();
     } catch (const std::exception& e) {
         std::cerr << "Exception in producer thread: " << e.what() << std::endl;
         rpi_cam->running_ = false;
