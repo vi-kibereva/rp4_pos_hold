@@ -19,10 +19,13 @@ def plot_data():
     start_pos = data['start']
     target_pos = data['target']
 
+    # --- Plotting ---
     plt.figure(figsize=(10, 8))
 
+    # Plot the drone's path
     plt.plot(x_coords, y_coords, 'b-', label='Drone Path')
 
+    # Plot start and end points
     plt.plot(start_pos[0], start_pos[1], 'go', markersize=10, label='Start')
     plt.plot(target_pos[0], target_pos[1], 'rx', markersize=15, label='Target')
 

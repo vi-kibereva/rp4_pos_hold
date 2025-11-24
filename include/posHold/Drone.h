@@ -52,13 +52,17 @@ public:
 
     Drone();
 
-    explicit Drone(msp::Msp& m_msp);
+    Drone(std::string port);
+
+    explicit Drone(msp::Msp& m_msp, std::string);
 
     [[nodiscard]] cv::Mat getGrayscaleImage();
 
     [[nodiscard]] GyroData getGyroData();
 
     [[nodiscard]] double getAltitude();
+
+    cv::VideoCapture& getCamera() { return m_camera; }
 
 private:
     msp::Msp* m_msp;

@@ -31,7 +31,7 @@ StatusData Msp::status() {
 }
 
 RcData Msp::rc() {
-	std::uint8_t payload[MAX_RC_CHANNELS * 2];
+	std::uint8_t payload[MAX_RC_CHANNELS * 2]; // 2 bytes per channel
 	std::uint8_t recv_size = 0;
 
 	if (!bitaflught_msp_.request(MSP_RC, payload, sizeof(payload), &recv_size)) {
@@ -55,9 +55,10 @@ AltitudeData Msp::altitude() {
 }
 
 void Msp::setRawRc(const SetRawRcData &data) {
-	std::uint8_t payload[16];
+	std::uint8_t payload[16]; // 8 channels * 2 bytes each
 	std::uint8_t size = 16;
 
+	// Pack channel values as little-endian uint16_t
 	const std::uint16_t *ch =
 			reinterpret_cast<const std::uint16_t *>(&data.channels);
 	for (std::uint8_t i = 0; i < 8; i++) {
