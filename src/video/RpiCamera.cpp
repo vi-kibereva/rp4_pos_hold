@@ -60,7 +60,7 @@ void RpiCamera::producer_thread(RpiCamera* rpi_cam) {
             }
         }
 
-        cam_.stopVideo();
+        rpi_cam->cam_.stopVideo();
     } catch (const std::exception& e) {
         std::cerr << "Exception in producer thread: " << e.what() << std::endl;
         rpi_cam->running_ = false;
