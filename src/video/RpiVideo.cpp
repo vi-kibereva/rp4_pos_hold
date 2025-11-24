@@ -1,11 +1,15 @@
+#include <mutex>
+
+#include <opencv2/opencv.hpp>
+
 #include "video/RpiVideo.hpp"
 #include "video/RpiCamera.hpp"
-#include <mutex>
 
 namespace video {
 
 RpiVideo::RpiVideo(std::uint32_t height, std::uint32_t width, int framerate) :
-    shared_frame_(), mtx_(), new_data_avaliable_(false),
+    shared_frame_(height, width, CV_8UC3),
+    mtx_(), new_data_avaliable_(false),
     camera_(shared_frame_, new_data_avaliable_, mtx_, height, width, framerate) {}
 
 RpiVideo::~RpiVideo() {
