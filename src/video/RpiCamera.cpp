@@ -44,6 +44,7 @@ void RpiCamera::stop() {
 }
 
 void RpiCamera::producer_thread(RpiCamera* rpi_cam) {
+    std::cout << "Started producer thread" << std::endl;
     try {
         rpi_cam->cam_.startVideo();
 
@@ -58,8 +59,6 @@ void RpiCamera::producer_thread(RpiCamera* rpi_cam) {
                 std::swap(rpi_cam->shared_buffer_, rpi_cam->producer_buffer_);
                 rpi_cam->new_data_available_ = true;
                 std::cout << "new_data_available_ set true" << std::endl;
-
-                std::cout << "true" << std::endl;
             }
         }
 
