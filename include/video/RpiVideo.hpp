@@ -23,7 +23,7 @@ public:
 private:
     cv::Mat shared_frame_;
     std::mutex mtx_;
-    bool new_data_avaliable_;
+    bool new_data_available_;
 
     RpiCamera camera_;
 
