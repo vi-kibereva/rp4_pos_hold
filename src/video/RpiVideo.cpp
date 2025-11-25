@@ -24,10 +24,13 @@ cv::Mat RpiVideo::get_frame() {
     std::lock_guard<std::mutex> lock(mtx_);
 
     cv::Mat frame(height_, width_, CV_8UC3);
+
+    while (!new_data_avaliable_) {}
+
     std::swap(frame, shared_frame_);
+    new_data_avaliable_ = false;
 
     return frame;
 }
-
 
 }
