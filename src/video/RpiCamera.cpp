@@ -44,11 +44,13 @@ void RpiCamera::stop() {
 }
 
 void RpiCamera::producer_thread(RpiCamera* rpi_cam) {
-    std::cout << "Started producer thread" << std::endl;
     try {
         rpi_cam->cam_.startVideo();
+        std::cout << "[PRODUCER] " << rpi_cam->running_ << std::endl;
+
 
         while (rpi_cam->running_) {
+            std::cout << "[PRODUCER] " << rpi_cam->running_ << std::endl;
             if (!rpi_cam->cam_.getVideoFrame(rpi_cam->producer_buffer_, 935)) {
                 std::cerr << "Timeout!" << std::endl;
                 continue;

@@ -28,6 +28,8 @@ cv::Mat RpiVideo::get_frame() {
 
     while (!new_data_available_) {}
     std::swap(frame, shared_frame_);
+    std::cout << "[CONSUMER] was: " << new_data_available_ << std::endl;
+
     new_data_available_ = false;
     std::cout << "new_data_available_ set false" << std::endl;
 
