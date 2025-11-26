@@ -9,7 +9,7 @@ int main() {
         "output.mp4",
         cv::VideoWriter::fourcc('m','p','4','v'),
         30.0,
-        cv::Size(1080, 1920)
+        cv::Size(1920, 1080)
     );
     if (!writer.isOpened()) {
         std::cerr << "Error: Could not open output file (output.mp4) for writing" << std::endl;
