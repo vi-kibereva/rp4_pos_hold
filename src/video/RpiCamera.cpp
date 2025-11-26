@@ -7,7 +7,7 @@ namespace video {
 
 RpiCamera::RpiCamera(
         cv::Mat &shared_buffer,
-        bool &new_data_available,
+        std::atomic<bool> &new_data_available,
         std::mutex &mtx,
         std::uint32_t height,
         std::uint32_t width,

@@ -16,7 +16,7 @@ public:
     RpiCamera() = delete;
     RpiCamera(
         cv::Mat &shared_buffer,
-        bool &new_data_avaliable,
+        std::atomic<bool> &new_data_available,
         std::mutex &mtx,
         std::uint32_t height = 1080,
         std::uint32_t width = 1920,
