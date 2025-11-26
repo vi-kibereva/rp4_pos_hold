@@ -46,21 +46,20 @@ void RpiCamera::stop() {
 void RpiCamera::producer_thread(RpiCamera* rpi_cam) {
     try {
         rpi_cam->cam_.startVideo();
-        std::cout << "[PRODUCER] " << rpi_cam->running_ << std::endl;
 
 
         while (rpi_cam->running_) {
-            std::cout << "[PRODUCER] " << rpi_cam->running_ << std::endl;
             if (!rpi_cam->cam_.getVideoFrame(rpi_cam->producer_buffer_, 935)) {
                 std::cerr << "Timeout!" << std::endl;
                 continue;
             }
 
             {
+                rpi_cam->new_data_available_.store(true, std::memory_order_release);
+
                 std::lock_guard<std::mutex> lock(rpi_cam->mtx_);
                 std::swap(rpi_cam->shared_buffer_, rpi_cam->producer_buffer_);
-                rpi_cam->new_data_available_ = true;
-                std::cout << "new_data_available_ set true" << std::endl;
+                std::cout << "[PRODUCER] new_data_available_ set true" << std::endl;
             }
         }
 

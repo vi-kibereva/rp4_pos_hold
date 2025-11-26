@@ -1,7 +1,9 @@
+#include <atomic>
 #include <mutex>
 #include <iostream>
 
 #include <opencv2/opencv.hpp>
+#include <thread>
 
 #include "video/RpiVideo.hpp"
 #include "video/RpiCamera.hpp"
@@ -22,15 +24,18 @@ void RpiVideo::start_camera() { camera_.start(); }
 void RpiVideo::stop_camera() { camera_.stop(); }
 
 cv::Mat RpiVideo::get_frame() {
+    while (!new_data_available_.load(std::memory_order_acquire)) {
+        std::this_thread::yield();
+    }
+
     std::lock_guard<std::mutex> lock(mtx_);
 
     cv::Mat frame(height_, width_, CV_8UC3);
 
     while (!new_data_available_) {}
     std::swap(frame, shared_frame_);
-    std::cout << "[CONSUMER] was: " << new_data_available_ << std::endl;
 
-    new_data_available_ = false;
+    new_data_available_.store(false, std::memory_order_release);
     std::cout << "new_data_available_ set false" << std::endl;
 
     return frame;

@@ -34,7 +34,7 @@ private:
 
     cv::Mat producer_buffer_;
     cv::Mat &shared_buffer_;
-    bool &new_data_available_;
+    std::atomic<bool> &new_data_available_;
 
     std::mutex &mtx_;
 

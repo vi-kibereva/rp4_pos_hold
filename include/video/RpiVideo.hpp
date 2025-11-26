@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <mutex>
+#include <atomic>
 
 #include <opencv2/opencv.hpp>
 
@@ -23,7 +24,7 @@ public:
 private:
     cv::Mat shared_frame_;
     std::mutex mtx_;
-    bool new_data_available_;
+    std::atomic<bool> new_data_available_;
 
     RpiCamera camera_;
 
