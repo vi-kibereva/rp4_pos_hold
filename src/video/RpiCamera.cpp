@@ -59,7 +59,6 @@ void RpiCamera::producer_thread(RpiCamera* rpi_cam) {
 
                 std::lock_guard<std::mutex> lock(rpi_cam->mtx_);
                 std::swap(rpi_cam->shared_buffer_, rpi_cam->producer_buffer_);
-                std::cout << "[PRODUCER] new_data_available_ set true" << std::endl;
             }
         }
 

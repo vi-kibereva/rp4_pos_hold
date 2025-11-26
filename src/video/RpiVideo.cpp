@@ -36,7 +36,6 @@ cv::Mat RpiVideo::get_frame() {
     std::swap(frame, shared_frame_);
 
     new_data_available_.store(false, std::memory_order_release);
-    std::cout << "new_data_available_ set false" << std::endl;
 
     return frame;
 }
