@@ -19,6 +19,7 @@ public:
         cv::Mat &shared_buffer,
         std::atomic<bool> &new_data_available,
         std::mutex &mtx,
+        std::condition_variable &cv,
         std::chrono::steady_clock::time_point &frame_timestamp,
         std::uint32_t height = 1080,
         std::uint32_t width = 1920,
@@ -35,11 +36,13 @@ private:
     lccv::PiCamera cam_;
 
     cv::Mat producer_buffer_;
+    cv::Mat last_valid_frame_;
     cv::Mat &shared_buffer_;
     std::atomic<bool> &new_data_available_;
     std::chrono::steady_clock::time_point &frame_timestamp_;
 
     std::mutex &mtx_;
+    std::condition_variable &cv_;
 
     std::optional<std::thread> producer_thread_ = std::nullopt;
 

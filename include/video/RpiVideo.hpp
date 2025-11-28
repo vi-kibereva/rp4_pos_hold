@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <mutex>
+#include <condition_variable>
 #include <atomic>
 #include <chrono>
 
@@ -25,6 +26,7 @@ public:
 private:
     cv::Mat shared_frame_;
     std::mutex mtx_;
+    std::condition_variable cv_;
     std::atomic<bool> new_data_available_;
     std::chrono::steady_clock::time_point frame_timestamp_;
 

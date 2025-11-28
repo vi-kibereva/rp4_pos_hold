@@ -35,24 +35,41 @@ int main() {
         auto target_time = start_time + (i * FRAME_DURATION);
 
         // Get frame from camera (may block if not ready)
+        auto fetch_start = std::chrono::steady_clock::now();
         cv::Mat frame = video.get_frame();
+        auto fetch_end = std::chrono::steady_clock::now();
 
-        // Sleep until target time to maintain exact 30 FPS pacing
-        std::this_thread::sleep_until(target_time);
+        // Check if we're already late
+        auto now = std::chrono::steady_clock::now();
+        if (now < target_time) {
+            // We have time - sleep until target
+            std::this_thread::sleep_until(target_time);
+        } else {
+            // We're late - log warning but continue
+            auto late_by = std::chrono::duration_cast<std::chrono::microseconds>(
+                now - target_time);
+            if (late_by.count() > 1000) {  // More than 1ms late
+                std::cerr << "Warning: Frame " << i << " late by "
+                          << late_by.count() << " μs" << std::endl;
+            }
+        }
 
-        // Write frame at precisely the target time
+        // Write frame at the scheduled time (or immediately if late)
         writer.write(frame);
 
         // Log progress every 30 frames (1 second intervals)
         if (i % 30 == 0) {
-            auto now = std::chrono::steady_clock::now();
+            auto current_time = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                now - start_time);
+                current_time - start_time);
             auto expected_ms = (i * 1000) / TARGET_FPS;
+            auto fetch_duration = std::chrono::duration_cast<std::chrono::microseconds>(
+                fetch_end - fetch_start);
 
             std::cout << i << "/300 | Elapsed: " << elapsed.count() << " ms"
                       << " | Expected: " << expected_ms << " ms"
                       << " | Deviation: " << (elapsed.count() - expected_ms) << " ms"
+                      << " | Fetch: " << fetch_duration.count() << " μs"
                       << std::endl;
         }
     }
@@ -64,11 +81,19 @@ int main() {
     auto total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(
         end_time - start_time);
     auto expected_duration = (TOTAL_FRAMES * 1000) / TARGET_FPS;
+    auto deviation = total_duration.count() - expected_duration;
 
     std::cout << "\n=== Recording Complete ===" << std::endl;
     std::cout << "Total time: " << total_duration.count() << " ms" << std::endl;
     std::cout << "Expected:   " << expected_duration << " ms" << std::endl;
-    std::cout << "Deviation:  " << (total_duration.count() - expected_duration) << " ms" << std::endl;
+    std::cout << "Deviation:  " << deviation << " ms" << std::endl;
 
-    return 0;
+    // Success criteria
+    if (std::abs(deviation) <= 5) {
+        std::cout << "SUCCESS: Deviation within ±5ms tolerance!" << std::endl;
+        return 0;
+    } else {
+        std::cout << "FAILED: Deviation exceeds ±5ms tolerance" << std::endl;
+        return 1;
+    }
 }
