@@ -10,7 +10,7 @@ int main() {
 
     cv::VideoWriter writer(
         "output.mp4",
-        cv::VideoWriter::fourcc('m','p','4','v'),
+        cv::VideoWriter::fourcc('H','2','6','4'),
         30.0,
         cv::Size(1920, 1080)
     );
@@ -35,9 +35,7 @@ int main() {
         auto target_time = start_time + (i * FRAME_DURATION);
 
         // Get frame from camera (may block if not ready)
-        auto fetch_start = std::chrono::steady_clock::now();
         cv::Mat frame = video.get_frame();
-        auto fetch_end = std::chrono::steady_clock::now();
 
         // Check if we're already late
         auto now = std::chrono::steady_clock::now();
@@ -48,28 +46,20 @@ int main() {
             // We're late - log warning but continue
             auto late_by = std::chrono::duration_cast<std::chrono::microseconds>(
                 now - target_time);
-            if (late_by.count() > 1000) {  // More than 1ms late
-                std::cerr << "Warning: Frame " << i << " late by "
-                          << late_by.count() << " μs" << std::endl;
-            }
+            if (late_by.count() > 1000) {}
         }
 
-        // Write frame at the scheduled time (or immediately if late)
         writer.write(frame);
 
-        // Log progress every 30 frames (1 second intervals)
         if (i % 30 == 0) {
             auto current_time = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 current_time - start_time);
             auto expected_ms = (i * 1000) / TARGET_FPS;
-            auto fetch_duration = std::chrono::duration_cast<std::chrono::microseconds>(
-                fetch_end - fetch_start);
 
             std::cout << i << "/300 | Elapsed: " << elapsed.count() << " ms"
                       << " | Expected: " << expected_ms << " ms"
                       << " | Deviation: " << (elapsed.count() - expected_ms) << " ms"
-                      << " | Fetch: " << fetch_duration.count() << " μs"
                       << std::endl;
         }
     }
