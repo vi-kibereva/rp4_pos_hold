@@ -9,6 +9,7 @@ RpiCamera::RpiCamera(
         cv::Mat &shared_buffer,
         std::atomic<bool> &new_data_available,
         std::mutex &mtx,
+        std::chrono::steady_clock::time_point &frame_timestamp,
         std::uint32_t height,
         std::uint32_t width,
         int framerate
@@ -17,6 +18,7 @@ RpiCamera::RpiCamera(
         producer_buffer_(height, width, CV_8UC3),
         shared_buffer_(shared_buffer),
         new_data_available_(new_data_available),
+        frame_timestamp_(frame_timestamp),
         mtx_(mtx) {
     cam_.options->video_width = width;
     cam_.options->video_height = height;
@@ -55,10 +57,13 @@ void RpiCamera::producer_thread(RpiCamera* rpi_cam) {
             }
 
             {
+                auto now = std::chrono::steady_clock::now();
+
                 rpi_cam->new_data_available_.store(true, std::memory_order_release);
 
                 std::lock_guard<std::mutex> lock(rpi_cam->mtx_);
                 std::swap(rpi_cam->shared_buffer_, rpi_cam->producer_buffer_);
+                rpi_cam->frame_timestamp_ = now;
             }
         }
 

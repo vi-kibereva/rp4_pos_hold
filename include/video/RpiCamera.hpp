@@ -5,6 +5,7 @@
 #include <thread>
 #include <optional>
 #include <atomic>
+#include <chrono>
 
 #include <lccv.hpp>
 #include <opencv2/opencv.hpp>
@@ -18,6 +19,7 @@ public:
         cv::Mat &shared_buffer,
         std::atomic<bool> &new_data_available,
         std::mutex &mtx,
+        std::chrono::steady_clock::time_point &frame_timestamp,
         std::uint32_t height = 1080,
         std::uint32_t width = 1920,
         int framerate = 30
@@ -35,6 +37,7 @@ private:
     cv::Mat producer_buffer_;
     cv::Mat &shared_buffer_;
     std::atomic<bool> &new_data_available_;
+    std::chrono::steady_clock::time_point &frame_timestamp_;
 
     std::mutex &mtx_;
 

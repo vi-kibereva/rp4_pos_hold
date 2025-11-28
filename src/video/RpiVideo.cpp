@@ -12,9 +12,12 @@ namespace video {
 
 RpiVideo::RpiVideo(std::uint32_t height, std::uint32_t width, int framerate) :
     shared_frame_(height, width, CV_8UC3),
-    mtx_(), new_data_available_(false),
-    camera_(shared_frame_, new_data_available_, mtx_, height, width, framerate),
-    height_(height), width_(width) {}
+    mtx_(),
+    new_data_available_(false),
+    frame_timestamp_(),
+    camera_(shared_frame_, new_data_available_, mtx_, frame_timestamp_, height, width, framerate),
+    height_(height),
+    width_(width) {}
 
 RpiVideo::~RpiVideo() {
     stop_camera();
