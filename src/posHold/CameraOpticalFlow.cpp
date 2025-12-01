@@ -52,9 +52,6 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     int y1 = std::min(y + len, grayFrame.rows - 1);
     cv::Rect roi(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
 
-    
-    if (m_prevPoints.empty()) return;
-
     // Re-detect points if too few
     const int minPoints = 50;
     if (m_prevPoints.size() < minPoints)
@@ -65,6 +62,8 @@ void CameraOpticalFlow::calc(int x, int y, int len)
         for (auto &p : newPoints) { p.x += roi.x; p.y += roi.y; }
         m_prevPoints.insert(m_prevPoints.end(), newPoints.begin(), newPoints.end());
     }
+
+    if (m_prevPoints.empty()) return;
 
     // Lucas-Kanade optical flow
     std::vector<cv::Point2f> nextPoints;
