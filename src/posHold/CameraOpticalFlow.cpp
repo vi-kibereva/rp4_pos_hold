@@ -39,7 +39,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
             std::min(2 * len + 1, grayFrame.rows - std::max(y - len, 0))
         );
 
-        cv::goodFeaturesToTrack(grayFrame(roiRect), m_prevPoints, 200, 0.01, 5);
+        cv::goodFeaturesToTrack(grayFrame(roiRect), m_prevPoints, 100, 0.01, 5);
 
         // Shift points to full frame coordinates
         for (auto &p : m_prevPoints) { p.x += roiRect.x; p.y += roiRect.y; }
@@ -56,12 +56,12 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     cv::Rect roi(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
 
     // Re-detect points if too few
-    const int minPoints = 50;
+    const int minPoints = 30;
     if (m_prevPoints.size() < minPoints)
     {
-        std::cout << "Redetecting features\n";
+        //std::cout << "Redetecting features\n";
         std::vector<cv::Point2f> newPoints;
-        cv::goodFeaturesToTrack(grayFrame(roi), newPoints, 200, 0.01, 5);
+        cv::goodFeaturesToTrack(grayFrame(roi), newPoints, 100, 0.01, 5);
         for (auto &p : newPoints) { p.x += roi.x; p.y += roi.y; }
         m_prevPoints.insert(m_prevPoints.end(), newPoints.begin(), newPoints.end());
     }
