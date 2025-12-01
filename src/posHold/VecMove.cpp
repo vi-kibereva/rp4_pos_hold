@@ -25,7 +25,7 @@ void VecMove::calc()
         return;
     }
 
-    cv::Point2f meanOpticalFlow = m_cameraOpticalFlow.getOpticalFlowAt();
+    cv::Point2f meanOpticalFlow = m_cameraOpticalFlow.getOpticalFlow();
     
     m_vecMove = (m_drone->getAltitude() / m_drone->cameraInfo.focalLength) * (m_vecDown.getVecDownDisplacement() - meanOpticalFlow);
 
