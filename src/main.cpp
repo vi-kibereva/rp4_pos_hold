@@ -4,6 +4,10 @@
 
 #include "posHold/Drone.hpp"
 
+#include "posHold/VecMove.hpp"
+
+#include "pid/pid.hpp"
+
 
 int main(int argc, char* argv[]) {
 
