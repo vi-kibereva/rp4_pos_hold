@@ -1,4 +1,4 @@
-#include "posHold/VecMove.h"
+#include "posHold/VecMove.hpp"
 
 VecMove::VecMove(Drone& drone) :
     m_drone{ &drone },
