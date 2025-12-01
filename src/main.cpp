@@ -12,7 +12,7 @@
 using namespace std::chrono_literals;   // ← only this one line!
 
 int main(int argc, char* argv[]) {
-
+    std::cout << cv::getBuildInformation() << std::endl;
     if (argc < 2) {
 		std::cerr << "Usage: " << argv[0] << " /dev/ttyUSB0\n";
 		return 2;
