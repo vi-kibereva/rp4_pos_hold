@@ -2,6 +2,13 @@
 
 #include "posHold/CameraOpticalFlow.hpp"
 
+cv::VideoWriter writer = cv::VideoWriter(
+    "output.mp4",
+    cv::VideoWriter::fourcc('M','P','4','V'),
+    30.0,
+    cv::Size(1920, 1080)
+);
+
 CameraOpticalFlow::CameraOpticalFlow(Drone& drone) :
     m_drone{ &drone }
 {
@@ -47,6 +54,32 @@ void CameraOpticalFlow::calc(const int x, const int y, const int len)
     flowROI.copyTo(m_opticalFlow(roi));
 
     m_prevFrame = grayFrame.clone();
+
+    // --------------------------------------------
+    // VISUALIZATION + SAVE TO VIDEO
+    // --------------------------------------------
+    cv::Mat vis;
+    cv::cvtColor(grayFrame, vis, cv::COLOR_GRAY2BGR);
+
+    // Draw arrows
+    const int step = 10;       // draw each 10 pixels
+    const double scale = 3.0;  // arrow size
+
+    for (int yy = roi.y; yy < roi.y + roi.height; yy += step)
+    {
+        for (int xx = roi.x; xx < roi.x + roi.width; xx += step)
+        {
+            cv::Point2f f = m_opticalFlow.at<cv::Point2f>(yy, xx);
+
+            cv::Point p0(xx, yy);
+            cv::Point p1(xx + (int)(f.x * scale), yy + (int)(f.y * scale));
+
+            cv::arrowedLine(vis, p0, p1, cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
+        }
+    }
+
+    // Save this frame
+    writer.write(vis);
 }
 
 cv::Point2f CameraOpticalFlow::getOpticalFlowAt(const int x, const int y) const
