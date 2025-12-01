@@ -100,6 +100,7 @@ int main(int argc, char* argv[]) {
         if (now >= next_trigger) {
             cvVecMove_base = cvVecMove;
             next_trigger = now + 1s;
+            std::cout << "------------\n" << cvVecMove_base  << "--------" << std::endl;
         }
 
         std::cout << "Difference: \t" << cvVecMove  << std::endl;
