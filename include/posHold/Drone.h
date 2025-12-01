@@ -6,6 +6,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "msp/msp.hpp"
+#include "video/RpiVideo.hpp"
 
 class Drone
 {
@@ -17,13 +18,15 @@ public:
             const int resolutionX,
             const int resolutionY,
             const double minDist,
-            const double maxDist) :
+            const double maxDist,
+            const int fps) :
             fov{ fov },
             resolutionX{ resolutionX },
             resolutionY{ resolutionY },
             minDist{ minDist },
             maxDist{ maxDist },
-            focalLength{ resolutionX / (std::tan(fov / 2) * 2) }
+            focalLength{ resolutionX / (std::tan(fov / 2) * 2) },
+            fps{ fps }
         {
         }
 
@@ -33,6 +36,7 @@ public:
         const double minDist;
         const double maxDist;
         const double focalLength;
+        const int fps;
     };
 
     struct GyroData
@@ -47,14 +51,11 @@ public:
         1280,
         720,
         0.01,
-        1000.0
+        1000.0,
+        30
     );
 
-    Drone();
-
-    Drone(std::string port);
-
-    explicit Drone(msp::Msp& m_msp, std::string);
+    explicit Drone(msp::Msp& m_msp);
 
     [[nodiscard]] cv::Mat getGrayscaleImage();
 
@@ -62,11 +63,11 @@ public:
 
     [[nodiscard]] double getAltitude();
 
-    cv::VideoCapture& getCamera() { return m_camera; }
+    ~Drone();
 
 private:
     msp::Msp* m_msp;
-    cv::VideoCapture m_camera;
+    video::RpiVideo m_camera;
 };
 
 #endif

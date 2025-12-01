@@ -1,31 +1,15 @@
 #include "posHold/Drone.h"
 
-Drone::Drone() :
-    m_camera(0)
-{
-    m_camera.set(cv::CAP_PROP_FRAME_WIDTH, cameraInfo.resolutionX);
-    m_camera.set(cv::CAP_PROP_FRAME_HEIGHT, cameraInfo.resolutionY);
-}
-
-Drone::Drone(std::string port) :
-    m_camera(port)
-{
-    m_camera.set(cv::CAP_PROP_FRAME_WIDTH, cameraInfo.resolutionX);
-    m_camera.set(cv::CAP_PROP_FRAME_HEIGHT, cameraInfo.resolutionY);
-}
-
-Drone::Drone(msp::Msp& msp, std::string port) :
+Drone::Drone(msp::Msp& msp) :
     m_msp{ &msp },
-    m_camera(port)
+    m_camera(cameraInfo.resolutionY, cameraInfo.resolutionX, cameraInfo.framerate)
 {
-    m_camera.set(cv::CAP_PROP_FRAME_WIDTH, cameraInfo.resolutionX);
-    m_camera.set(cv::CAP_PROP_FRAME_HEIGHT, cameraInfo.resolutionY);
+    m_camera.start_camera();
 }
 
 [[nodiscard]] cv::Mat Drone::getGrayscaleImage()
 {
-    cv::Mat frame;
-    m_camera >> frame;
+    cv::Mat frame = m_camera.get_frame();
     cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
     return frame;
 }
@@ -49,5 +33,11 @@ Drone::Drone(msp::Msp& msp, std::string port) :
 [[nodiscard]] double Drone::getAltitude()
 {
     return 1.0;
+    
     return m_msp->altitude().altitude / 100.0;
+}
+
+Drone::~Drone()
+{
+    m_camera.stop_camera();
 }
