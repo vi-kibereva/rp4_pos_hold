@@ -15,7 +15,7 @@ public:
 
 private:
     Drone* m_drone;
-    cv::Mat m_prevGray;
+    cv::Mat m_prevFrame;
     std::vector<cv::Point2f> m_prevPoints;
     cv::Point2f m_opticalFlow;
 };
