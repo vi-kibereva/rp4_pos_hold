@@ -54,6 +54,8 @@ public:
         1000.0,
         30
     );
+    
+    Drone();
 
     explicit Drone(msp::Msp& m_msp);
 

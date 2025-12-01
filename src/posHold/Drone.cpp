@@ -1,5 +1,11 @@
 #include "posHold/Drone.hpp"
 
+Drone::Drone() :
+    m_camera(cameraInfo.resolutionY, cameraInfo.resolutionX, cameraInfo.fps)
+{
+    m_camera.start_camera();
+}
+
 Drone::Drone(msp::Msp& msp) :
     m_msp{ &msp },
     m_camera(cameraInfo.resolutionY, cameraInfo.resolutionX, cameraInfo.fps)

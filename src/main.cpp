@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
     msp::Msp* msp;
 	try {
 		// Construct MSP client
-		msp = new msp::Msp(port, B115200, 10);
+		// msp = new msp::Msp(port, B115200, 10);
 
 		// // --- Example: MSP_STATUS ---
 		// std::cout << "frefer1" << '\n';
