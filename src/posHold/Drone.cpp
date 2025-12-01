@@ -23,6 +23,7 @@ Drone::Drone(msp::Msp& msp) :
 [[nodiscard]] cv::Mat Drone::getGrayscaleImage()
 {
     cv::Mat frame = m_camera.get_frame();
+    std::cout << "got frame\n";
     writer.write(frame);
     cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
     return frame;
