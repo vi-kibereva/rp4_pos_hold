@@ -1,17 +1,16 @@
 #include "posHold/Drone.hpp"
 
-cv::VideoWriter writer;
+cv::VideoWriter writer = cv::VideoWriter(
+    "output.mp4",
+    cv::VideoWriter::fourcc('M','P','4','V'),
+    30.0,
+    cv::Size(1920, 1080)
+);
 
 Drone::Drone() :
     m_camera(cameraInfo.resolutionY, cameraInfo.resolutionX, cameraInfo.fps)
 {
     m_camera.start_camera();
-    writer = cv::VideoWriter(
-        "output.mp4",
-        cv::VideoWriter::fourcc('M','P','4','V'),
-        30.0,
-        cv::Size(1920, 1080)
-    );
 }
 
 Drone::Drone(msp::Msp& msp) :
