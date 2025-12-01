@@ -1,5 +1,4 @@
 #include <opencv2/opencv.hpp>
-
 #include "posHold/CameraOpticalFlow.hpp"
 
 cv::VideoWriter writer = cv::VideoWriter(
@@ -31,88 +30,87 @@ void CameraOpticalFlow::calc(const int x, const int y, const int len)
     int y1 = std::min(y + len, grayFrame.rows - 1);
     cv::Rect roi(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
 
-    cv::Mat prevROI = m_prevFrame(roi);
-    cv::Mat currROI = grayFrame(roi);
+    // -------------------------------
+    // Sparse points grid
+    // -------------------------------
+    std::vector<cv::Point2f> prevPts;
+    const int step = 10;
+    for (int yy = roi.y; yy < roi.y + roi.height; yy += step)
+        for (int xx = roi.x; xx < roi.x + roi.width; xx += step)
+            prevPts.emplace_back(float(xx), float(yy));
 
-    cv::Mat flowROI;
-    cv::calcOpticalFlowFarneback(
-        prevROI, currROI, flowROI,
-        0.5,   // pyramid scale
-        3,     // levels
-        15,    // window size
-        3,     // iterations
-        5,     // poly_n
-        1.2,   // poly_sigma
-        0      // flags
+    std::vector<cv::Point2f> nextPts;
+    std::vector<uchar> status;
+    std::vector<float> err;
+
+    cv::calcOpticalFlowPyrLK(
+        m_prevFrame, grayFrame, prevPts, nextPts, status, err,
+        cv::Size(21,21), 3
     );
 
-    if (m_opticalFlow.empty() || m_opticalFlow.size() != grayFrame.size())
+    // -------------------------------
+    // Interpolate sparse points into dense map
+    // -------------------------------
+    cv::Mat denseFlow(grayFrame.size(), CV_32FC2, cv::Scalar(0,0));
+
+    for (size_t i = 0; i < prevPts.size(); ++i)
     {
-        m_opticalFlow = cv::Mat::zeros(grayFrame.size(), CV_32FC2);
+        if (!status[i]) continue;
+
+        int px = cvRound(prevPts[i].x);
+        int py = cvRound(prevPts[i].y);
+        cv::Point2f f = nextPts[i] - prevPts[i];
+
+        denseFlow.at<cv::Point2f>(py, px) = f;
     }
 
-    flowROI.copyTo(m_opticalFlow(roi));
+    // Optional: smooth/interpolate the flow map
+    cv::GaussianBlur(denseFlow, m_opticalFlow, cv::Size(21,21), 0);
 
     m_prevFrame = grayFrame.clone();
 
-    // --------------------------------------------
-    // VISUALIZATION + SAVE TO VIDEO
-    // --------------------------------------------
+    // -------------------------------
+    // Visualization + save
+    // -------------------------------
     cv::Mat vis;
     cv::cvtColor(grayFrame, vis, cv::COLOR_GRAY2BGR);
 
-    // Draw arrows
-    const int step = 10;       // draw each 10 pixels
-    const double scale = 3.0;  // arrow size
+    const double arrowScale = 3.0;
 
     for (int yy = roi.y; yy < roi.y + roi.height; yy += step)
     {
         for (int xx = roi.x; xx < roi.x + roi.width; xx += step)
         {
             cv::Point2f f = m_opticalFlow.at<cv::Point2f>(yy, xx);
-
-            cv::Point p0(xx, yy);
-            cv::Point p1(xx + (int)(f.x * scale), yy + (int)(f.y * scale));
-
-            cv::arrowedLine(vis, p0, p1, cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
+            cv::arrowedLine(vis,
+                cv::Point(xx, yy),
+                cv::Point(xx + int(f.x * arrowScale), yy + int(f.y * arrowScale)),
+                cv::Scalar(0,0,255), 1, cv::LINE_AA
+            );
         }
     }
 
-    // --------------------------------------------
-    // MEAN FLOW OF ROI
-    // --------------------------------------------
-    cv::Scalar meanFlow = cv::mean(flowROI);  
-    // meanFlow = {meanX, meanY, 0, 0}
+    // Mean flow arrow
+    cv::Scalar meanFlow = cv::mean(m_opticalFlow(roi));
     cv::Point2f avg(meanFlow[0], meanFlow[1]);
-
-    // arrow scale so it's visible
     double bigScale = 20.0;
-
-    // Arrow position in corner
     cv::Point corner(50, 50);
-    cv::Point cornerTo(
-        50 + (int)(avg.x * bigScale),
-        50 + (int)(avg.y * bigScale)
+    cv::arrowedLine(vis, corner,
+        cv::Point(corner.x + int(avg.x * bigScale), corner.y + int(avg.y * bigScale)),
+        cv::Scalar(0,255,0), 3, cv::LINE_AA
     );
 
-    // Draw the big corner arrow
-    cv::arrowedLine(vis, corner, cornerTo, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
-
-    // Optional: text with numeric values
     char buf[100];
     snprintf(buf, sizeof(buf), "Avg flow: (%.2f, %.2f)", avg.x, avg.y);
     cv::putText(vis, buf, cv::Point(50, 90), cv::FONT_HERSHEY_SIMPLEX,
-                0.7, cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
+                0.7, cv::Scalar(0,255,0), 2, cv::LINE_AA);
 
-    // Save this frame
     writer.write(vis);
 }
 
 cv::Point2f CameraOpticalFlow::getOpticalFlowAt(const int x, const int y) const
 {
     if (m_opticalFlow.empty())
-    {
-        throw std::runtime_error("CameraOpticalFlow::getOpticalFlowAt called before calling CameraOpticalFlow::calc");
-    }
+        throw std::runtime_error("getOpticalFlowAt called before calc");
     return m_opticalFlow.at<cv::Point2f>(y, x);
 }
