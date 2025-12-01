@@ -16,6 +16,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
 {
     cv::Mat grayFrame = m_drone->getGrayscaleImage();
 
+    /*
     // Initialize writer if not already
     if (!g_writer.isOpened())
     {
@@ -24,6 +25,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
                       30,
                       grayFrame.size());
     }
+    */
 
     // First frame: detect initial features
     if (m_prevFrame.empty())
@@ -107,7 +109,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     m_prevPoints = goodNextPoints;
 
     // Visualization
-    cv::Mat vis;
+    /*cv::Mat vis;
     cv::cvtColor(grayFrame, vis, cv::COLOR_GRAY2BGR);
 
     double scale = 5.0;  // scale for flow arrows
@@ -138,7 +140,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     if (g_writer.isOpened())
         g_writer.write(vis);
 
-    m_prevFrame = grayFrame.clone();
+    m_prevFrame = grayFrame.clone();*/
 }
 
 // Return current optical flow
