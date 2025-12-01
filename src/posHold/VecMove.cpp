@@ -47,7 +47,7 @@ void VecMove::calc()
         }
     }
 
-    std::cout << m_vecDown.getVecDownDisplacement() << '\n';
+    std::cout << counter << '\n';
 
     meanOpticalFlow /= counter;
 
