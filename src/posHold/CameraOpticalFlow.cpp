@@ -78,6 +78,32 @@ void CameraOpticalFlow::calc(const int x, const int y, const int len)
         }
     }
 
+    // --------------------------------------------
+    // MEAN FLOW OF ROI
+    // --------------------------------------------
+    cv::Scalar meanFlow = cv::mean(flowROI);  
+    // meanFlow = {meanX, meanY, 0, 0}
+    cv::Point2f avg(meanFlow[0], meanFlow[1]);
+
+    // arrow scale so it's visible
+    double bigScale = 20.0;
+
+    // Arrow position in corner
+    cv::Point corner(50, 50);
+    cv::Point cornerTo(
+        50 + (int)(avg.x * bigScale),
+        50 + (int)(avg.y * bigScale)
+    );
+
+    // Draw the big corner arrow
+    cv::arrowedLine(vis, corner, cornerTo, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
+
+    // Optional: text with numeric values
+    char buf[100];
+    snprintf(buf, sizeof(buf), "Avg flow: (%.2f, %.2f)", avg.x, avg.y);
+    cv::putText(vis, buf, cv::Point(50, 90), cv::FONT_HERSHEY_SIMPLEX,
+                0.7, cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
+
     // Save this frame
     writer.write(vis);
 }
