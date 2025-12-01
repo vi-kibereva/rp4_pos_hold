@@ -2,7 +2,7 @@
 #define CAMERAOPTICALFLOW_H
 
 #include <opencv2/opencv.hpp>
-#include "posHold/Drone.h"
+#include "posHold/Drone.hpp"
 
 class CameraOpticalFlow
 {

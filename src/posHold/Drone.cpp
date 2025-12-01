@@ -1,4 +1,4 @@
-#include "posHold/Drone.h"
+#include "posHold/Drone.hpp"
 
 Drone::Drone(msp::Msp& msp) :
     m_msp{ &msp },
