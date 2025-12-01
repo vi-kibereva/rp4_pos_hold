@@ -15,8 +15,8 @@ public:
     [[nodiscard]] cv::Point2f getVecMove() const;
 
 private:
-    static constexpr int s_accountFlowPixels = 10;
-    static constexpr int s_calcFlowPixels = 50;
+    static constexpr int s_accountFlowPixels = 150;
+    static constexpr int s_calcFlowPixels = 200;
     static constexpr double s_noFlowBalanceVecMultiplier = 1.0;
     Drone* m_drone;
     VecDown m_vecDown;
