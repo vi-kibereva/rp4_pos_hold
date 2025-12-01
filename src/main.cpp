@@ -36,9 +36,6 @@ int main(int argc, char* argv[]) {
 
     auto t1 = std::chrono::high_resolution_clock::now();
 
-
-    std::vector<cv::Mat> frames{};
-
     // Frame timing configuration
     constexpr int TARGET_FPS = 30;
     constexpr int TOTAL_FRAMES = 300;
@@ -55,8 +52,6 @@ int main(int argc, char* argv[]) {
         // Calculate precise target time for this frame
         auto target_time = start_time + (i * FRAME_DURATION);
 
-
-
         // Check if we're already late
         auto now = std::chrono::steady_clock::now();
         if (now < target_time) {
@@ -70,7 +65,6 @@ int main(int argc, char* argv[]) {
         }
 
         // writer.write(drone.getGrayscaleImage());
-        frames.push_back(drone.getGrayscaleImage());
 
         if (i % 30 == 0) {
             auto current_time = std::chrono::steady_clock::now();
@@ -113,25 +107,6 @@ int main(int argc, char* argv[]) {
     std::cout << "Total time: " << total_duration.count() << " ms" << std::endl;
     std::cout << "Expected:   " << expected_duration << " ms" << std::endl;
     std::cout << "Deviation:  " << deviation << " ms" << std::endl;
-
-    cv::VideoWriter writer(
-        "output.mp4",
-        cv::VideoWriter::fourcc('a','v','c','1'),
-        30.0,
-        cv::Size(1920, 1080)
-    );
-
-    if (!writer.isOpened()) {
-        std::cerr << "Error: Could not open output file (output.mp4) for writing" << std::endl;
-        return -1;
-    }
-
-    for (const auto& frame : frames)
-    {
-        cv::Mat frame_bgr;
-        cv::cvtColor(frame, frame_bgr, cv::COLOR_GRAY2BGR);
-        writer.write(frame_bgr);
-    }
 
     // Success criteria
     if (std::abs(deviation) <= 5) {
