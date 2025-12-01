@@ -71,17 +71,17 @@ int main(int argc, char* argv[]) {
     auto t1 = std::chrono::high_resolution_clock::now();
 
 
-    cv::VideoWriter writer(
-        "output.mp4",
-        cv::VideoWriter::fourcc('H','2','6','4'),
-        30.0,
-        cv::Size(1920, 1080)
-    );
+    // cv::VideoWriter writer(
+    //     "output.mp4",
+    //     cv::VideoWriter::fourcc('H','2','6','4'),
+    //     30.0,
+    //     cv::Size(1920, 1080)
+    // );
 
-    if (!writer.isOpened()) {
-        std::cerr << "Error: Could not open output file (output.mp4) for writing" << std::endl;
-        return -1;
-    }
+    // if (!writer.isOpened()) {
+    //     std::cerr << "Error: Could not open output file (output.mp4) for writing" << std::endl;
+    //     return -1;
+    // }
 
     // Frame timing configuration
     constexpr int TARGET_FPS = 30;
@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
             if (late_by.count() > 1000) {}
         }
 
-        writer.write(drone.getGrayscaleImage());
+        // writer.write(drone.getGrayscaleImage());
 
         if (i % 30 == 0) {
             auto current_time = std::chrono::steady_clock::now();
