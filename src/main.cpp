@@ -22,42 +22,6 @@ int main(int argc, char* argv[]) {
 		// Construct MSP client
 		// msp = new msp::Msp(port, B115200, 10);
 
-		// // --- Example: MSP_STATUS ---
-		// std::cout << "frefer1" << '\n';
-		// std::cout << msp.status() << '\n';
-		// std::cout << "frefer2" << '\n';
-
-		// // --- Example: MSP_RC ---
-		// std::cout << msp.rc() << '\n';
-
-		// // --- Example: MSP_ATTITUDE ---
-		// std::cout << msp.attitude() << '\n';
-
-		// // --- Example: MSP_ALTITUDE ---
-		// std::cout << msp.altitude() << '\n';
-
-		// auto start = std::chrono::steady_clock::now();
-
-		// // --- Example: MSP_SET_RAW_RC (commented out for safety) ---
-		// msp::SetRawRcData rc_data(1500, 1500, 1000, 1500, 1900, 1000, 1700, 1000);
-		// std::cout << "Sending: " << rc_data << '\n';
-		// for (int i = 0; i<200; ++i){
-		// 	msp.setRawRc(rc_data);
-		// 	std::cout << msp.rc() << '\n';
-		// }
-		// std::cout << "Armed"<< '\n';
-		// msp::SetRawRcData rc_data_throttle(1500, 1500, 1300, 1500, 1900, 1000, 1700, 1000);
-		// for (int i = 0; i<200; ++i){
-		// 	msp.setRawRc(rc_data_throttle);
-		// 	std::cout << msp.rc() << '\n';
-		// }
-		// std::cout << "RC values sent successfully\n";
-
-		// sleep(1);
-
-		// std::cout << msp.rc() << '\n';
-
-
 	} catch (const std::exception &ex) {
 		std::cout << "Error: " << ex.what() << '\n';
 		return 1;
@@ -93,6 +57,8 @@ int main(int argc, char* argv[]) {
     std::cout << "Recording " << TOTAL_FRAMES << " frames at " << TARGET_FPS
               << " FPS (1 frame every " << FRAME_DURATION.count() << " μs)" << std::endl;
 
+    cv::Point2f cvVecMove_base;
+    static auto next_trigger = std::chrono::steady_clock::now() + 1s;
     for (int i = 0; i < TOTAL_FRAMES; ++i) {
         // Calculate precise target time for this frame
         auto target_time = start_time + (i * FRAME_DURATION);
@@ -129,7 +95,12 @@ int main(int argc, char* argv[]) {
         auto t2 = std::chrono::high_resolution_clock::now();
         cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
         t1 = t2;
-        std::cout << cvVecMove << '\n';
+        if (now >= next_trigger) {
+            cvVecMove_base = cvVecMove;
+        }
+        if (cv::norm(cvVecMove - cvVecMove_base) / cv::norm(cvVecMove_base) > 0.10) {
+            std::cout << cvVecMove << '\n';
+        }
     }
 
 
