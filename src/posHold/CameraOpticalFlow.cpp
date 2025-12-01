@@ -1,12 +1,13 @@
 #include <opencv2/opencv.hpp>
 #include "posHold/CameraOpticalFlow.hpp"
+#include <iostream>
 
 // Global video writer
 cv::VideoWriter g_writer;
 
 // Constructor
 CameraOpticalFlow::CameraOpticalFlow(Drone& drone)
-    : m_drone{ &drone }, m_opticalFlow{0.0f, 0.0f}
+    : m_drone{ &drone }, m_opticalFlow{0.0f, 0.0f}, m_alpha{0.3f} // smoothing factor
 {
 }
 
@@ -56,7 +57,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     const int minPoints = 50;
     if (m_prevPoints.size() < minPoints)
     {
-        std::cout << "redetect\n";
+        std::cout << "Redetecting features\n";
         std::vector<cv::Point2f> newPoints;
         cv::goodFeaturesToTrack(grayFrame(roi), newPoints, 200, 0.01, 5);
         for (auto &p : newPoints) { p.x += roi.x; p.y += roi.y; }
@@ -93,9 +94,15 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     }
 
     if (!goodNextPoints.empty())
-        m_opticalFlow = flowSum * (1.0f / goodNextPoints.size());
+    {
+        cv::Point2f meanFlow = flowSum * (1.0f / goodNextPoints.size());
+        // Apply low-pass filter
+        m_opticalFlow = m_alpha * meanFlow + (1.0f - m_alpha) * m_opticalFlow;
+    }
     else
+    {
         m_opticalFlow = cv::Point2f(0, 0);
+    }
 
     m_prevPoints = goodNextPoints;
 
