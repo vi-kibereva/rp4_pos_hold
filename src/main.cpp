@@ -100,6 +100,9 @@ int main(int argc, char* argv[]) {
         if (now >= next_trigger) {
             cvVecMove_base = cvVecMove;
         }
+
+        std::cout << "Difference: \t" << cvVecMove - cvVecMove_base  << std::endl;
+        std::cout << "Difference normal:\t" << cv::norm(cvVecMove - cvVecMove_base)  << std::endl;
         if (cv::norm(cvVecMove - cvVecMove_base) / cv::norm(cvVecMove_base) > 0.10) {
             std::cout << cvVecMove << '\n';
         }
