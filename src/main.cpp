@@ -48,6 +48,7 @@ int main(int argc, char* argv[]) {
 
     cv::Point2f cvVecMove_base;
     static auto next_trigger = std::chrono::steady_clock::now() + 1s;
+    cv::Point2f vec{};
     for (int i = 0; i < TOTAL_FRAMES; ++i) {
         // Calculate precise target time for this frame
         auto target_time = start_time + (i * FRAME_DURATION);
@@ -82,8 +83,10 @@ int main(int argc, char* argv[]) {
         auto t2 = std::chrono::high_resolution_clock::now();
         cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
         t1 = t2;
-        std::cout << vecMove.getVecMove() << '\n';
+        vec += vecMove.getVecMove();
     }
+
+    std::cout << vec << '\n';
 
 
     // Final timing report
