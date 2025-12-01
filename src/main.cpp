@@ -1,9 +1,8 @@
-#include "video/RpiVideo.hpp"
 #include <iostream>
 #include <chrono>
 #include <thread>
 
-#include "video/DroneRpi.hpp"
+#include "posHold/Drone.hpp"
 
 
 int main(int argc, char* argv[]) {
