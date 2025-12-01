@@ -1,4 +1,4 @@
-#include "CameraOpticalFlow.h"
+#include "CameraOpticalFlow.hpp"
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <iostream>
