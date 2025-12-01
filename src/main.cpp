@@ -126,9 +126,11 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    for (auto& frame : frames)
+    for (const auto& frame : frames)
     {
-        writer.write(frame);
+        cv::Mat frame_bgr;
+        cv::cvtColor(frame, frame_bgr, cv::COLOR_GRAY2BGR);
+        writer.write(frame_bgr);
     }
 
     // Success criteria
