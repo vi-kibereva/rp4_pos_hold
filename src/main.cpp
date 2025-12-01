@@ -77,6 +77,9 @@ int main(int argc, char* argv[]) {
                       << " | Expected: " << expected_ms << " ms"
                       << " | Deviation: " << (elapsed.count() - expected_ms) << " ms"
                       << std::endl;
+
+            std::cout << vec << '\n';
+            vec = {};
         }
 
         vecMove.calc();
@@ -85,8 +88,6 @@ int main(int argc, char* argv[]) {
         t1 = t2;
         vec += vecMove.getVecMove();
     }
-
-    std::cout << vec << '\n';
 
 
     // Final timing report
