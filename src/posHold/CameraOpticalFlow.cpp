@@ -45,7 +45,7 @@ void CameraOpticalFlow::calc(const int x, const int y, const int len)
     }
 
     double diff = cv::norm(m_prevFrame, grayFrame, cv::NORM_L2);
-    std::cout << "Frame difference: " << diff << std::endl;
+    // std::cout << "Frame difference: " << diff << std::endl;
 
     flowROI.copyTo(m_opticalFlow(roi));
 
