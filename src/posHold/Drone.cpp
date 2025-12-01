@@ -33,7 +33,7 @@ Drone::Drone(msp::Msp& msp) :
 [[nodiscard]] double Drone::getAltitude()
 {
     return 1.0;
-    
+
     return m_msp->altitude().altitude / 100.0;
 }
 

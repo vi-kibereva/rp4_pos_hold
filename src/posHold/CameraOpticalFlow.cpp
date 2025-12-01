@@ -1,6 +1,6 @@
 #include <opencv2/opencv.hpp>
 
-#include "posHold/CameraOpticalFlow.h"
+#include "posHold/CameraOpticalFlow.hpp"
 
 CameraOpticalFlow::CameraOpticalFlow(Drone& drone) :
     m_drone{ &drone }

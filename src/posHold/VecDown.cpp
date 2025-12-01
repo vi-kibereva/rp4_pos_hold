@@ -1,4 +1,4 @@
-#include "posHold/VecDown.h"
+#include "posHold/VecDown.hpp"
 
 VecDown::VecDown(Drone& drone) :
     m_drone{ &drone }
