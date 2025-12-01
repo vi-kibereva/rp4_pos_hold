@@ -7,7 +7,7 @@ cv::VideoWriter g_writer;
 
 // Constructor
 CameraOpticalFlow::CameraOpticalFlow(Drone& drone)
-    : m_drone{ &drone }, m_opticalFlow{0.0f, 0.0f}, m_alpha{0.3f} // smoothing factor
+    : m_drone{ &drone }, m_opticalFlow{0.0f, 0.0f}
 {
 }
 
@@ -97,7 +97,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     {
         cv::Point2f meanFlow = flowSum * (1.0f / goodNextPoints.size());
         // Apply low-pass filter
-        m_opticalFlow = m_alpha * meanFlow + (1.0f - m_alpha) * m_opticalFlow;
+        m_opticalFlow = s_alpha * meanFlow + (1.0f - s_alpha) * m_opticalFlow;
     }
     else
     {
