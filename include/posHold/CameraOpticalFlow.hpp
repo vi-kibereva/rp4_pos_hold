@@ -11,12 +11,13 @@ public:
 
     void calc(int x, int y, int len);
 
-    [[nodiscard]] cv::Point2f getOpticalFlowAt(int x, int y) const;
+    [[nodiscard]] cv::Point2f getOpticalFlow() const;
 
 private:
     Drone* m_drone;
-    cv::Mat m_prevFrame;
-    cv::Mat m_opticalFlow;
+    cv::Mat m_prevGray;
+    std::vector<cv::Point2f> m_prevPoints;
+    cv::Point2f m_opticalFlow;
 };
 
 #endif

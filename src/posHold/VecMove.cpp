@@ -25,29 +25,7 @@ void VecMove::calc()
         return;
     }
 
-    cv::Point2f meanOpticalFlow{ 0.0f, 0.0f };
-
-    const int xMin = std::max(static_cast<int>(p.x) - s_accountFlowPixels, 0);
-    const int xMax = std::min(static_cast<int>(p.x) + s_accountFlowPixels, m_drone->cameraInfo.resolutionX - 1);
-    const int yMin = std::max(static_cast<int>(p.y) - s_accountFlowPixels, 0);
-    const int yMax = std::min(static_cast<int>(p.y) + s_accountFlowPixels, m_drone->cameraInfo.resolutionY - 1);
-
-    int counter = 0;
-    for (int x = xMin; x <= xMax; ++x)
-    {
-        for (int y = yMin; y <= yMax; ++y)
-        {
-            if (static_cast<long long>(p.x - x) * (p.x - x)
-                + static_cast<long long>(p.y - y) * (p.y - y)
-                <= static_cast<long long>(s_accountFlowPixels) * s_accountFlowPixels)
-            {
-                meanOpticalFlow += m_cameraOpticalFlow.getOpticalFlowAt(x, y);
-                ++counter;
-            }
-        }
-    }
-
-    meanOpticalFlow /= counter;
+    cv::Point2f meanOpticalFlow = m_cameraOpticalFlow.getOpticalFlowAt();
     
     m_vecMove = (m_drone->getAltitude() / m_drone->cameraInfo.focalLength) * (m_vecDown.getVecDownDisplacement() - meanOpticalFlow);
 
