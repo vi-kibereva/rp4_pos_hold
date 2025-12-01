@@ -49,8 +49,6 @@ void VecMove::calc()
 
     meanOpticalFlow /= counter;
     
-    std::cout << "Flow: " << meanOpticalFlow  << std::endl;
-
     m_vecMove = (m_drone->getAltitude() / m_drone->cameraInfo.focalLength) * (m_vecDown.getVecDownDisplacement() - meanOpticalFlow);
 
     m_hasPrev = true;

@@ -82,17 +82,7 @@ int main(int argc, char* argv[]) {
         auto t2 = std::chrono::high_resolution_clock::now();
         cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
         t1 = t2;
-        if (now >= next_trigger) {
-            cvVecMove_base = cvVecMove;
-            next_trigger = now + 1s;
-            std::cout << "------------\n" << cvVecMove_base  << "--------" << std::endl;
-        }
-
-        // std::cout << "Difference: \t" << cvVecMove - cvVecMove_base  << std::endl;
-        // std::cout << "Difference normal:\t" << cv::norm(cvVecMove - cvVecMove_base)  << std::endl;
-        // if (cv::norm(cvVecMove - cvVecMove_base) / cv::norm(cvVecMove_base) > 0.10) {
-        //     std::cout << cvVecMove << '\n';
-        // }
+        std::cout << vecMove.getVecMove() << '\n';
     }
 
 
