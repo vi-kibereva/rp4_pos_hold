@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
 
     cv::VideoWriter writer(
         "output.mp4",
-        cv::VideoWriter::fourcc('H','2','6','4'),
+        cv::VideoWriter::fourcc('a','v','c','1'),
         30.0,
         cv::Size(1920, 1080)
     );
