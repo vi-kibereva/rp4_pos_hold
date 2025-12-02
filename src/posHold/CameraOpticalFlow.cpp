@@ -1,9 +1,12 @@
 #include <opencv2/opencv.hpp>
 #include "posHold/CameraOpticalFlow.hpp"
 #include <iostream>
+#include <fstream>
+#include <vector>
 
 // Global video writer
 cv::VideoWriter g_writer;
+std::ofstream text_writer;
 
 // Constructor
 CameraOpticalFlow::CameraOpticalFlow(Drone& drone)
@@ -16,7 +19,6 @@ void CameraOpticalFlow::calc(int x, int y, int len)
 {
     cv::Mat grayFrame = m_drone->getGrayscaleImage();
 
-    /*
     // Initialize writer if not already
     if (!g_writer.isOpened())
     {
@@ -25,27 +27,9 @@ void CameraOpticalFlow::calc(int x, int y, int len)
                       30,
                       grayFrame.size());
     }
-    */
-
-    // First frame: detect initial features
-    if (m_prevFrame.empty())
+    if (!text_writer.is_open())
     {
-        m_prevFrame = grayFrame.clone();
-
-        cv::Rect roiRect(
-            std::max(x - len, 0),
-            std::max(y - len, 0),
-            std::min(2 * len + 1, grayFrame.cols - std::max(x - len, 0)),
-            std::min(2 * len + 1, grayFrame.rows - std::max(y - len, 0))
-        );
-
-        cv::goodFeaturesToTrack(grayFrame(roiRect), m_prevPoints, 100, 0.01, 5);
-
-        // Shift points to full frame coordinates
-        for (auto &p : m_prevPoints) { p.x += roiRect.x; p.y += roiRect.y; }
-
-        m_opticalFlow = cv::Point2f(0, 0);
-        return;
+        text_writer.open("flow_txt_data.txt");
     }
 
     // Define ROI for feature detection
@@ -54,6 +38,20 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     int x1 = std::min(x + len, grayFrame.cols - 1);
     int y1 = std::min(y + len, grayFrame.rows - 1);
     cv::Rect roi(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+
+    // First frame: detect initial features
+    if (m_prevFrame.empty())
+    {
+        m_prevFrame = grayFrame.clone();
+
+        cv::goodFeaturesToTrack(grayFrame(roi), m_prevPoints, 100, 0.01, 5);
+
+        // Shift points to full frame coordinates
+        for (auto &p : m_prevPoints) { p.x += roi.x; p.y += roi.y; }
+
+        m_opticalFlow = cv::Point2f(0, 0);
+        return;
+    }
 
     // Re-detect points if too few
     const int minPoints = 30;
@@ -109,7 +107,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     m_prevPoints = goodNextPoints;
 
     // Visualization
-    /*cv::Mat vis;
+    cv::Mat vis;
     cv::cvtColor(grayFrame, vis, cv::COLOR_GRAY2BGR);
 
     double scale = 5.0;  // scale for flow arrows
@@ -136,11 +134,17 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     snprintf(buf, sizeof(buf), "Avg flow: (%.2f, %.2f)", m_opticalFlow.x, m_opticalFlow.y);
     cv::putText(vis, buf, cv::Point(50, 90), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
 
-    // Write to video
+    // Write to video and text
     if (g_writer.isOpened())
+    {
         g_writer.write(vis);
+    }
+    if (text_writer.is_open())
+    {
+        text_writer << "x: " << m_opticalFlow.x << ", " << "y: " << m_opticalFlow.y << '\n';
+    }
 
-    m_prevFrame = grayFrame.clone();*/
+    m_prevFrame = grayFrame.clone();
 }
 
 // Return current optical flow
