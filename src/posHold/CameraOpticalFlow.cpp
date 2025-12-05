@@ -23,7 +23,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     if (!g_writer.isOpened())
     {
         g_writer.open("flow_output.avi",
-                      cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
+                      cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
                       30,
                       grayFrame.size());
     }
@@ -137,11 +137,11 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     // Write to video and text
     if (g_writer.isOpened())
     {
-        // g_writer.write(vis);
+        g_writer.write(vis);
     }
     if (text_writer.is_open())
     {
-        // text_writer << "x: " << m_opticalFlow.x << ", " << "y: " << m_opticalFlow.y << '\n';
+        text_writer << "x: " << m_opticalFlow.x << ", " << "y: " << m_opticalFlow.y << '\n';
     }
 
     m_prevFrame = grayFrame.clone();
