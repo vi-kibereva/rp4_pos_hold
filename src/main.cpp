@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
             videoWriter.open("flow_output.avi",
                         cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
                         10,
-                        grayFrame.size());
+                        videoData[i].size());
         }
         if (!textWriter.is_open())
         {
