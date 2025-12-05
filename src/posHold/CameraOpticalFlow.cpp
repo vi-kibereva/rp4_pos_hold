@@ -47,7 +47,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     {
         m_prevFrame = grayFrame.clone();
 
-        cv::goodFeaturesToTrack(grayFrame(roi), m_prevPoints, 100, 0.01, 5);
+        cv::goodFeaturesToTrack(grayFrame(roi), m_prevPoints, 200, 0.01, 5);
 
         // Shift points to full frame coordinates
         for (auto &p : m_prevPoints) { p.x += roi.x; p.y += roi.y; }
@@ -57,12 +57,12 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     }
 
     // Re-detect points if too few
-    const int minPoints = 30;
+    const int minPoints = 50;
     if (m_prevPoints.size() < minPoints)
     {
         //std::cout << "Redetecting features\n";
         std::vector<cv::Point2f> newPoints;
-        cv::goodFeaturesToTrack(grayFrame(roi), newPoints, 100, 0.01, 5);
+        cv::goodFeaturesToTrack(grayFrame(roi), newPoints, 200, 0.01, 5);
         for (auto &p : newPoints) { p.x += roi.x; p.y += roi.y; }
         m_prevPoints.insert(m_prevPoints.end(), newPoints.begin(), newPoints.end());
     }
@@ -113,7 +113,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     cv::Mat vis;
     cv::cvtColor(grayFrame, vis, cv::COLOR_GRAY2BGR);
 
-    double scale = 5.0;  // scale for flow arrows
+    double scale = 0.5;  // scale for flow arrows
 
     for (size_t i = 0; i < goodPrevPoints.size(); ++i)
     {
@@ -126,10 +126,10 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     }
 
     // Draw mean flow arrow in corner
-    cv::Point corner(50, 50);
+    cv::Point corner(10, 10);
     cv::Point cornerTo(
-        corner.x + cvRound(m_opticalFlow.x * 20.0),
-        corner.y + cvRound(m_opticalFlow.y * 20.0)
+        corner.x + cvRound(m_opticalFlow.x),
+        corner.y + cvRound(m_opticalFlow.y)
     );
     cv::arrowedLine(vis, corner, cornerTo, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
 
