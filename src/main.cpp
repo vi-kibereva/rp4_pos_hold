@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
 
         vecMove.calc();
         auto t2 = std::chrono::high_resolution_clock::now();
-        cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
+        cv::Point2f cvVecMove = vecMove.getVecMove(); // / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
         t1 = t2;
 
         videoData.push_back(grayFrame);
@@ -92,15 +92,15 @@ int main(int argc, char* argv[]) {
             textWriter.open("flow_txt_data.txt");
         }
 
-        cv::cvtColor(videoData[i], videoData[i], cv::COLOR_GRAY2BGR);
+        cv::cvtColor(videoData.back(), videoData.back(), cv::COLOR_GRAY2BGR);
 
         // Draw mean flow arrow in corner
         cv::Point corner(100, 100);
         cv::Point cornerTo(
-            corner.x + cvRound(cvVecMove.x),
-            corner.y + cvRound(cvVecMove.y)
+            corner.x + cvRound(cvVecMove.x * 100000),
+            corner.y + cvRound(cvVecMove.y * 100000)
         );
-        cv::arrowedLine(videoData[i], corner, cornerTo, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
+        cv::arrowedLine(videoData.back(), corner, cornerTo, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
         
         textWriter << "x: " << cvVecMove.x << ", " << "y: " << cvVecMove.y << '\n';
     }
@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
         videoWriter.open("flow_output.avi",
                     cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
                     10,
-                    grayFrame.size());
+                    videoData.back().size());
     }
 
     for (const cv::Mat& mat : videoData)
