@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
 
         vecMove.calc();
         auto t2 = std::chrono::high_resolution_clock::now();
-        cv::Point2f cvVecMove = vecMove.getVecMove(); // / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
+        cv::Point2f cvVecMove = vecMove.getVecMove(); // (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
         t1 = t2;
 
         videoData.push_back(grayFrame);
