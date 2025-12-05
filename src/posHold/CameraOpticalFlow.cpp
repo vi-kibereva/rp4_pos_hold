@@ -12,6 +12,8 @@ std::ofstream text_writer;
 std::vector<cv::Mat> videoData{};
 */
 
+cv::Mat grayFrame = cv::Mat{};
+
 // Constructor
 CameraOpticalFlow::CameraOpticalFlow(Drone& drone)
     : m_drone{ &drone }, m_opticalFlow{0.0f, 0.0f}
