@@ -8,10 +8,13 @@
 cv::VideoWriter g_writer;
 std::ofstream text_writer;
 
+std::vector<cv::Mat> videoData{};
+
 // Constructor
 CameraOpticalFlow::CameraOpticalFlow(Drone& drone)
     : m_drone{ &drone }, m_opticalFlow{0.0f, 0.0f}
 {
+    videoData.reserve(300);
 }
 
 // Main calculation function
@@ -137,7 +140,8 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     // Write to video and text
     if (g_writer.isOpened())
     {
-        g_writer.write(vis);
+        videoData.push_back(vis);
+        // g_writer.write(vis);
     }
     if (text_writer.is_open())
     {
