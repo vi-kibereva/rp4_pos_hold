@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
     auto t1 = std::chrono::high_resolution_clock::now();
 
     // Frame timing configuration
-    constexpr int TARGET_FPS = 10;
+    constexpr int TARGET_FPS = 15;
     constexpr int TOTAL_FRAMES = 300;
     const auto FRAME_DURATION = std::chrono::microseconds(1'000'000 / TARGET_FPS);
 
