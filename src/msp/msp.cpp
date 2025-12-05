@@ -54,6 +54,19 @@ AltitudeData Msp::altitude() {
 	return AltitudeData(recv_size, payload);
 }
 
+RawImuData Msp::rawImu() {
+	constexpr std::uint8_t EXPECTED_SIZE = 18;
+	std::uint8_t payload[EXPECTED_SIZE];
+	std::uint8_t recv_size = 0;
+
+	if (!bitaflught_msp_.request(MSP_RAW_IMU, payload, EXPECTED_SIZE,
+															 &recv_size)) {
+		throw std::runtime_error("MSP_RAW_IMU request failed or timed out");
+	}
+
+	return RawImuData(recv_size, payload);
+}
+
 void Msp::setRawRc(const SetRawRcData &data) {
 	std::uint8_t payload[16]; // 8 channels * 2 bytes each
 	std::uint8_t size = 16;

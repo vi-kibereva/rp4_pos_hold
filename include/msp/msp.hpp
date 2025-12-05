@@ -21,6 +21,7 @@ namespace msp {
 enum MspCommand : std::uint8_t {
   MSP_API_VERSION = 1,
   MSP_STATUS = 101,
+  MSP_RAW_IMU = 102,
   MSP_RC = 105,
   MSP_ATTITUDE = 108,
   MSP_ALTITUDE = 109,
@@ -168,6 +169,51 @@ struct StatusData {
 };
 
 /**
+ * @brief Raw IMU sensor data from MSP_RAW_IMU.
+ *
+ * This structure holds the parsed response from an MSP_RAW_IMU request
+ * (command 102). Contains raw accelerometer, gyroscope, and magnetometer
+ * readings.
+ */
+struct RawImuData {
+  std::int16_t acc_x;   ///< Accelerometer X-axis
+  std::int16_t acc_y;   ///< Accelerometer Y-axis
+  std::int16_t acc_z;   ///< Accelerometer Z-axis
+  std::int16_t gyro_x;  ///< Gyroscope X-axis (deg/s)
+  std::int16_t gyro_y;  ///< Gyroscope Y-axis (deg/s)
+  std::int16_t gyro_z;  ///< Gyroscope Z-axis (deg/s)
+  std::int16_t mag_x;   ///< Magnetometer X-axis
+  std::int16_t mag_y;   ///< Magnetometer Y-axis
+  std::int16_t mag_z;   ///< Magnetometer Z-axis
+
+  RawImuData(std::uint8_t recv_size, std::uint8_t *payload) {
+    if (recv_size < 18) {
+      throw std::runtime_error("MSP_RAW_IMU payload size " +
+                               std::to_string(recv_size) +
+                               " (expected 18)\n");
+    }
+
+    acc_x = static_cast<int16_t>(payload[0] | (payload[1] << 8));
+    acc_y = static_cast<int16_t>(payload[2] | (payload[3] << 8));
+    acc_z = static_cast<int16_t>(payload[4] | (payload[5] << 8));
+    gyro_x = static_cast<int16_t>(payload[6] | (payload[7] << 8));
+    gyro_y = static_cast<int16_t>(payload[8] | (payload[9] << 8));
+    gyro_z = static_cast<int16_t>(payload[10] | (payload[11] << 8));
+    mag_x = static_cast<int16_t>(payload[12] | (payload[13] << 8));
+    mag_y = static_cast<int16_t>(payload[14] | (payload[15] << 8));
+    mag_z = static_cast<int16_t>(payload[16] | (payload[17] << 8));
+  }
+
+  friend std::ostream &operator<<(std::ostream &os, const RawImuData &imu) {
+    os << "RAW_IMU ~ "
+       << "acc[" << imu.acc_x << ", " << imu.acc_y << ", " << imu.acc_z << "], "
+       << "gyro[" << imu.gyro_x << ", " << imu.gyro_y << ", " << imu.gyro_z << "], "
+       << "mag[" << imu.mag_x << ", " << imu.mag_y << ", " << imu.mag_z << "]";
+    return os;
+  }
+};
+
+/**
  * @brief Altitude and vertical velocity data from MSP_ALTITUDE.
  *
  * This structure holds the parsed response from an MSP_ALTITUDE request
@@ -306,6 +352,26 @@ public:
   [[nodiscard]] AltitudeData altitude();
 
   [[nodiscard]] AttitudeData attitude();
+
+  /**
+  * @brief Request raw IMU sensor data from the flight controller.
+  *
+  * Behavior:
+  * - Sends MSP_RAW_IMU (command 102) request with no payload.
+  * - Waits for an 18-byte response containing:
+  *   - bytes [0..5]: accelerometer X, Y, Z (int16_t each, little-endian)
+  *   - bytes [6..11]: gyroscope X, Y, Z (int16_t each, little-endian)
+  *   - bytes [12..17]: magnetometer X, Y, Z (int16_t each, little-endian)
+  * - Parses the response into a RawImuData struct.
+  * - Throws std::runtime_error if the request times out, the response is
+  * invalid, or the payload size is incorrect.
+  *
+  * @return RawImuData on success.
+  *
+  * @note Raw values are sensor-dependent and may require calibration.
+  *       Gyroscope values are typically in degrees/second.
+  */
+  [[nodiscard]] RawImuData rawImu();
 
   /**
    * @brief Send RC channel values to the flight controller.

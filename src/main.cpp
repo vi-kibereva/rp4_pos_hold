@@ -1,22 +1,17 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <fstream>
+#include <iomanip>
 
-#include "posHold/Drone.hpp"
-
-#include "posHold/VecMove.hpp"
-
-#include "pid/pid.hpp"
+#include "msp/msp.hpp"
+#include "video/RpiVideo.hpp"
 
 using namespace std::chrono_literals;
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-		std::cerr << "Usage: " << argv[0] << " /dev/ttyUSB0\n";
-		return 2;
-	}
+    const char* port = argc > 1 ? argv[1] : "/dev/ttyAMA0";
 
-	const char *port = argv[1];
     msp::Msp* msp;
 	try {
 		msp = new msp::Msp(port, B115200, 10);
@@ -25,107 +20,119 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-    Drone drone(*msp);
-    VecMove vecMove(drone);
-
-    PidController controller(1.0f, 0.0f, 0.0f, 0.0f);
-
-    auto t1 = std::chrono::high_resolution_clock::now();
-
     // Frame timing configuration
-    constexpr int TARGET_FPS = 10;
+    constexpr int TARGET_FPS = 15;
     constexpr int TOTAL_FRAMES = 300;
     const auto FRAME_DURATION = std::chrono::microseconds(1'000'000 / TARGET_FPS);
-    
-    cv::VideoWriter videoWriter;
-    std::ofstream textWriter;
+
+    // Video recording setup
     std::vector<cv::Mat> videoData{};
     videoData.reserve(TOTAL_FRAMES);
+
+    // Initialize RpiVideo directly (no Drone wrapper)
+    video::RpiVideo camera(1080, 1920, TARGET_FPS);
+    camera.start_camera();
+
+    // CSV file setup with descriptive headers
+    std::ofstream rawImuCsv("raw_imu_data.csv");
+    std::ofstream attitudeCsv("attitude_data.csv");
+    std::ofstream altitudeCsv("altitude_data.csv");
+
+    // Write CSV headers
+    rawImuCsv << "timestamp,acc_x,acc_y,acc_z,gyro_x,gyro_y,gyro_z,mag_x,mag_y,mag_z\n";
+    attitudeCsv << "timestamp,roll,pitch,yaw\n";
+    altitudeCsv << "timestamp,altitude,vario\n";
+
+    // Set floating point precision for timestamps
+    rawImuCsv << std::fixed << std::setprecision(6);
+    attitudeCsv << std::fixed << std::setprecision(6);
+    altitudeCsv << std::fixed << std::setprecision(6);
 
     auto start_time = std::chrono::steady_clock::now();
 
     std::cout << "Recording " << TOTAL_FRAMES << " frames at " << TARGET_FPS
-              << " FPS (1 frame every " << FRAME_DURATION.count() << " μs)" << std::endl;
-
-    cv::Point2f cvVecMove_base;
+              << " FPS" << std::endl;
     
     for (int i = 0; i < TOTAL_FRAMES; ++i) {
-        // Calculate precise target time for this frame
+        // Precise frame timing
         auto target_time = start_time + (i * FRAME_DURATION);
+        std::this_thread::sleep_until(target_time);
 
-        // Check if we're already late
-        auto now = std::chrono::steady_clock::now();
-        if (now < target_time) {
-            // We have time - sleep until target
-            std::this_thread::sleep_until(target_time);
-        } else {
-            // We're late - log warning but continue
-            auto late_by = std::chrono::duration_cast<std::chrono::microseconds>(
-                now - target_time);
-            if (late_by.count() > 1000) {}
-        }
+        // Calculate timestamp (float seconds from start)
+        float timestamp = i / static_cast<float>(TARGET_FPS);
 
+        // Progress reporting (every 30 frames)
         if (i % 30 == 0) {
             auto current_time = std::chrono::steady_clock::now();
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                current_time - start_time);
-            auto expected_ms = (i * 1000) / TARGET_FPS;
-
-            std::cout << i << "/" << TOTAL_FRAMES << " | Elapsed: " << elapsed.count() << " ms"
-                      << " | Expected: " << expected_ms << " ms"
-                      << " | Deviation: " << (elapsed.count() - expected_ms) << " ms"
-                      << std::endl;
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time);
+            std::cout << i << "/" << TOTAL_FRAMES << " frames captured" << std::endl;
         }
 
-        vecMove.calc();
-        auto t2 = std::chrono::high_resolution_clock::now();
-        cv::Point2f cvVecMove = vecMove.getVecMove(); // (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
-        t1 = t2;
+        // Capture video frame
+        cv::Mat frame = camera.get_frame();
+        videoData.push_back(frame);
 
-        videoData.push_back(grayFrame);
-        
-        // Visualization
-        
-        if (!textWriter.is_open())
-        {
-            textWriter.open("flow_txt_data.txt");
+        // Request MSP data with error handling
+        try {
+            // Raw IMU data
+            msp::RawImuData rawImu = msp->rawImu();
+            rawImuCsv << timestamp << ","
+                      << rawImu.acc_x << "," << rawImu.acc_y << "," << rawImu.acc_z << ","
+                      << rawImu.gyro_x << "," << rawImu.gyro_y << "," << rawImu.gyro_z << ","
+                      << rawImu.mag_x << "," << rawImu.mag_y << "," << rawImu.mag_z << "\n";
+
+            // Attitude data (convert tenths of degrees to degrees)
+            msp::AttitudeData attitude = msp->attitude();
+            attitudeCsv << timestamp << ","
+                        << (attitude.roll_tenths / 10.0) << ","
+                        << (attitude.pitch_tenths / 10.0) << ","
+                        << (attitude.yaw_tenths / 10.0) << "\n";
+
+            // Altitude data
+            msp::AltitudeData altitude = msp->altitude();
+            altitudeCsv << timestamp << ","
+                        << altitude.altitude << ","
+                        << altitude.vario << "\n";
+
+        } catch (const std::runtime_error& e) {
+            std::cerr << "MSP request failed at frame " << i
+                      << ": " << e.what() << std::endl;
+            // Skip CSV write for this frame to maintain data integrity
         }
-
-        // Draw mean flow arrow in corner
-        cv::Point corner(100, 100);
-        cv::Point cornerTo(
-            corner.x + cvRound(cvVecMove.x * 3000),
-            corner.y + cvRound(cvVecMove.y * 3000)
-        );
-        cv::arrowedLine(videoData.back(), corner, cornerTo, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
-        
-        textWriter << "x: " << cvVecMove.x << ", " << "y: " << cvVecMove.y << '\n';
     }
 
-    // Final timing report
-    auto end_time = std::chrono::steady_clock::now();
-    auto total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-        end_time - start_time);
-    auto expected_duration = (TOTAL_FRAMES * 1000) / TARGET_FPS;
-    auto deviation = total_duration.count() - expected_duration;
+    // Stop camera
+    camera.stop_camera();
+
+    // Close CSV files
+    rawImuCsv.close();
+    attitudeCsv.close();
+    altitudeCsv.close();
 
     std::cout << "\n=== Recording Complete ===" << std::endl;
-    std::cout << "Total time: " << total_duration.count() << " ms" << std::endl;
-    std::cout << "Expected:   " << expected_duration << " ms" << std::endl;
-    std::cout << "Deviation:  " << deviation << " ms" << std::endl;
 
-    if (!videoWriter.isOpened())
-    {
-        videoWriter.open("flow_output.avi",
+    // Write video from buffered frames
+    std::cout << "Writing video file..." << std::endl;
+
+    cv::VideoWriter videoWriter;
+    videoWriter.open("flow_output.avi",
                     cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
-                    10,
-                    videoData.back().size());
+                    TARGET_FPS,
+                    videoData.front().size());
+
+    if (!videoWriter.isOpened()) {
+        std::cerr << "Failed to open video writer!" << std::endl;
+        delete msp;
+        return 1;
     }
 
-    for (const cv::Mat& mat : videoData)
-    {
+    for (const cv::Mat& mat : videoData) {
         videoWriter.write(mat);
     }
-    
+
+    videoWriter.release();
+    std::cout << "Video written successfully." << std::endl;
+
+    delete msp;
     return 0;
 }
