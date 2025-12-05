@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-    Drone drone{};
+    Drone drone(*msp);
     VecMove vecMove(drone);
 
     PidController controller(1.0f, 0.0f, 0.0f, 0.0f);
