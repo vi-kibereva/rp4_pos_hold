@@ -27,7 +27,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     {
         g_writer.open("flow_output.avi",
                       cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
-                      15,
+                      10,
                       grayFrame.size());
     }
     if (!text_writer.is_open())
