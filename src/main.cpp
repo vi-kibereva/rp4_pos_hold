@@ -97,8 +97,8 @@ int main(int argc, char* argv[]) {
         // Draw mean flow arrow in corner
         cv::Point corner(100, 100);
         cv::Point cornerTo(
-            corner.x + cvRound(cvVecMove.x * 100000),
-            corner.y + cvRound(cvVecMove.y * 100000)
+            corner.x + cvRound(cvVecMove.x * 3000),
+            corner.y + cvRound(cvVecMove.y * 3000)
         );
         cv::arrowedLine(videoData.back(), corner, cornerTo, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
         
