@@ -22,6 +22,7 @@ private:
     CameraOpticalFlow m_cameraOpticalFlow;
     cv::Point2f m_vecMove;
     bool m_hasPrev = false;
+    static constexpr double s_vecDownDisplacementCoef = 0.5;
 };
 
 #endif
