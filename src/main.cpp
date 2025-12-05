@@ -40,7 +40,8 @@ int main(int argc, char* argv[]) {
     
     cv::VideoWriter videoWriter;
     std::ofstream textWriter;
-    std::vector<cv::Mat> videoData(TOTAL_FRAMES);
+    std::vector<cv::Mat> videoData{};
+    videoData.reserve(TOTAL_FRAMES);
 
     auto start_time = std::chrono::steady_clock::now();
 
@@ -83,7 +84,7 @@ int main(int argc, char* argv[]) {
         cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
         t1 = t2;
 
-        videoData[i] = drone.getGrayscaleImage();
+        videoData.push_back(grayFrame);
         
         // Visualization
         if (!videoWriter.isOpened())
@@ -91,7 +92,7 @@ int main(int argc, char* argv[]) {
             videoWriter.open("flow_output.avi",
                         cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
                         10,
-                        videoData[i].size());
+                        grayFrame.size());
         }
         if (!textWriter.is_open())
         {

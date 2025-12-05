@@ -4,6 +4,8 @@
 #include <opencv2/opencv.hpp>
 #include "posHold/Drone.hpp"
 
+cv::Mat grayFrame;
+
 class CameraOpticalFlow
 {
 public:

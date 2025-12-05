@@ -22,7 +22,7 @@ CameraOpticalFlow::CameraOpticalFlow(Drone& drone)
 // Main calculation function
 void CameraOpticalFlow::calc(int x, int y, int len)
 {
-    cv::Mat grayFrame = m_drone->getGrayscaleImage();
+    grayFrame = m_drone->getGrayscaleImage();
 
     /*
     // Initialize writer if not already
