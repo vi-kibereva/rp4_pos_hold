@@ -20,15 +20,13 @@ int main(int argc, char* argv[]) {
 	const char *port = argv[1];
     msp::Msp* msp;
 	try {
-		// Construct MSP client
-		// msp = new msp::Msp(port, B115200, 10);
-
+		msp = new msp::Msp(port, B115200, 10);
 	} catch (const std::exception &ex) {
 		std::cout << "Error: " << ex.what() << '\n';
 		return 1;
 	}
 
-    Drone drone{};
+    Drone drone(msp);
     VecMove vecMove(drone);
 
     PidController controller(1.0f, 0.0f, 0.0f, 0.0f);
@@ -39,6 +37,10 @@ int main(int argc, char* argv[]) {
     constexpr int TARGET_FPS = 10;
     constexpr int TOTAL_FRAMES = 300;
     const auto FRAME_DURATION = std::chrono::microseconds(1'000'000 / TARGET_FPS);
+    
+    cv::VideoWriter videoWriter;
+    std::ofstream textWriter;
+    std::vector<cv::Mat> videoData(TOTAL_FRAMES);
 
     auto start_time = std::chrono::steady_clock::now();
 
@@ -47,7 +49,7 @@ int main(int argc, char* argv[]) {
 
     cv::Point2f cvVecMove_base;
     static auto next_trigger = std::chrono::steady_clock::now() + 1s;
-    cv::Point2f vec{};
+    
     for (int i = 0; i < TOTAL_FRAMES; ++i) {
         // Calculate precise target time for this frame
         auto target_time = start_time + (i * FRAME_DURATION);
@@ -64,28 +66,53 @@ int main(int argc, char* argv[]) {
             if (late_by.count() > 1000) {}
         }
 
-        // writer.write(drone.getGrayscaleImage());
-
         if (i % 30 == 0) {
             auto current_time = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 current_time - start_time);
             auto expected_ms = (i * 1000) / TARGET_FPS;
 
-            std::cout << i << "/300 | Elapsed: " << elapsed.count() << " ms"
+            std::cout << i << "/" << TOTAL_FRAMES << " | Elapsed: " << elapsed.count() << " ms"
                       << " | Expected: " << expected_ms << " ms"
                       << " | Deviation: " << (elapsed.count() - expected_ms) << " ms"
                       << std::endl;
-
-            std::cout << vec << '\n';
-            vec = {};
         }
 
         vecMove.calc();
         auto t2 = std::chrono::high_resolution_clock::now();
         cv::Point2f cvVecMove = vecMove.getVecMove() / (std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1e6);
         t1 = t2;
-        vec += vecMove.getVecMove();
+
+        videoData[i] = drone.getGrayscaleImage();
+        
+        // Visualization
+
+        cv::cvtColor(videoData[i], videoData[i], cv::COLOR_GRAY2BGR);
+
+        double scale = 0.5;  // scale for flow arrows
+
+        for (size_t i = 0; i < goodPrevPoints.size(); ++i)
+        {
+            cv::Point p0(cvRound(goodPrevPoints[i].x), cvRound(goodPrevPoints[i].y));
+            cv::Point p1(
+                cvRound(goodPrevPoints[i].x + (goodNextPoints[i].x - goodPrevPoints[i].x) * scale),
+                cvRound(goodPrevPoints[i].y + (goodNextPoints[i].y - goodPrevPoints[i].y) * scale)
+            );
+            cv::arrowedLine(videoData[i], p0, p1, cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
+        }
+
+        // Draw mean flow arrow in corner
+        cv::Point corner(100, 100);
+        cv::Point cornerTo(
+            corner.x + cvRound(m_opticalFlow.x),
+            corner.y + cvRound(m_opticalFlow.y)
+        );
+        cv::arrowedLine(videoData[i], corner, cornerTo, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
+
+        if (text_writer.is_open())
+        {
+            textWriter << "x: " << m_opticalFlow.x << ", " << "y: " << m_opticalFlow.y << '\n';
+        }
     }
 
 

@@ -4,17 +4,19 @@
 #include <fstream>
 #include <vector>
 
+/*
 // Global video writer
 cv::VideoWriter g_writer;
 std::ofstream text_writer;
 
 std::vector<cv::Mat> videoData{};
+*/
 
 // Constructor
 CameraOpticalFlow::CameraOpticalFlow(Drone& drone)
     : m_drone{ &drone }, m_opticalFlow{0.0f, 0.0f}
 {
-    videoData.reserve(300);
+    // videoData.reserve(300);
 }
 
 // Main calculation function
@@ -22,6 +24,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
 {
     cv::Mat grayFrame = m_drone->getGrayscaleImage();
 
+    /*
     // Initialize writer if not already
     if (!g_writer.isOpened())
     {
@@ -34,6 +37,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     {
         text_writer.open("flow_txt_data.txt");
     }
+    */
 
     // Define ROI for feature detection
     int x0 = std::max(x - len, 0);
@@ -109,6 +113,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
 
     m_prevPoints = goodNextPoints;
 
+    /*
     // Visualization
     cv::Mat vis;
     cv::cvtColor(grayFrame, vis, cv::COLOR_GRAY2BGR);
@@ -142,6 +147,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     {
         text_writer << "x: " << m_opticalFlow.x << ", " << "y: " << m_opticalFlow.y << '\n';
     }
+    */
 
     m_prevFrame = grayFrame.clone();
 }
@@ -154,8 +160,11 @@ cv::Point2f CameraOpticalFlow::getOpticalFlow() const
 
 CameraOpticalFlow::~CameraOpticalFlow()
 {
+    /*
+    // To save video
     for (const cv::Mat& mat : videoData)
     {
         g_writer.write(mat);
     }
+    */
 }
