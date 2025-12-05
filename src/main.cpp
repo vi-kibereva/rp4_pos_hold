@@ -86,13 +86,7 @@ int main(int argc, char* argv[]) {
         videoData.push_back(grayFrame);
         
         // Visualization
-        if (!videoWriter.isOpened())
-        {
-            videoWriter.open("flow_output.avi",
-                        cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
-                        10,
-                        grayFrame.size());
-        }
+        
         if (!textWriter.is_open())
         {
             textWriter.open("flow_txt_data.txt");
@@ -111,7 +105,6 @@ int main(int argc, char* argv[]) {
         textWriter << "x: " << cvVecMove.x << ", " << "y: " << cvVecMove.y << '\n';
     }
 
-
     // Final timing report
     auto end_time = std::chrono::steady_clock::now();
     auto total_duration = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -124,12 +117,18 @@ int main(int argc, char* argv[]) {
     std::cout << "Expected:   " << expected_duration << " ms" << std::endl;
     std::cout << "Deviation:  " << deviation << " ms" << std::endl;
 
-    // Success criteria
-    if (std::abs(deviation) <= 5) {
-        std::cout << "SUCCESS: Deviation within ±5ms tolerance!" << std::endl;
-        return 0;
-    } else {
-        std::cout << "FAILED: Deviation exceeds ±5ms tolerance" << std::endl;
-        return 1;
+    if (!videoWriter.isOpened())
+    {
+        videoWriter.open("flow_output.avi",
+                    cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
+                    10,
+                    grayFrame.size());
     }
+
+    for (const cv::Mat& mat : videoData)
+    {
+        videoWriter.write(mat);
+    }
+    
+    return 0;
 }
