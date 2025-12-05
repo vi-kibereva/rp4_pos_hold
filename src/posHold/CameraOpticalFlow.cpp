@@ -86,6 +86,8 @@ void CameraOpticalFlow::calc(int x, int y, int len)
         status, err
     );
 
+    m_prevFrame = grayFrame.clone();
+
     // Compute mean flow and keep good points
     cv::Point2f flowSum(0, 0);
     std::vector<cv::Point2f> goodNextPoints;
@@ -114,6 +116,34 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     }
 
     m_prevPoints = goodNextPoints;
+
+    double scale = 0.5;  // scale for flow arrows
+
+    for (size_t i = 0; i < goodPrevPoints.size(); ++i)
+    {
+        cv::Point p0(cvRound(goodPrevPoints[i].x), cvRound(goodPrevPoints[i].y));
+        cv::Point p1(
+            cvRound(goodPrevPoints[i].x + (goodNextPoints[i].x - goodPrevPoints[i].x) * scale),
+            cvRound(goodPrevPoints[i].y + (goodNextPoints[i].y - goodPrevPoints[i].y) * scale)
+        );
+        cv::arrowedLine(vis, p0, p1, cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
+    }
+
+    // Add optical flow arrows
+
+    cv::cvtColor(grayFrame, grayFrame, cv::COLOR_GRAY2BGR);
+
+    double scale = 0.5;  // scale for flow arrows
+
+    for (size_t i = 0; i < goodPrevPoints.size(); ++i)
+    {
+        cv::Point p0(cvRound(goodPrevPoints[i].x), cvRound(goodPrevPoints[i].y));
+        cv::Point p1(
+            cvRound(goodPrevPoints[i].x + (goodNextPoints[i].x - goodPrevPoints[i].x) * scale),
+            cvRound(goodPrevPoints[i].y + (goodNextPoints[i].y - goodPrevPoints[i].y) * scale)
+        );
+        cv::arrowedLine(grayFrame, p0, p1, cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
+    }
 
     /*
     // Visualization
@@ -150,8 +180,6 @@ void CameraOpticalFlow::calc(int x, int y, int len)
         text_writer << "x: " << m_opticalFlow.x << ", " << "y: " << m_opticalFlow.y << '\n';
     }
     */
-
-    m_prevFrame = grayFrame.clone();
 }
 
 // Return current optical flow

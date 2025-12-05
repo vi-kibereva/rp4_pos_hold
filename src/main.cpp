@@ -48,7 +48,6 @@ int main(int argc, char* argv[]) {
               << " FPS (1 frame every " << FRAME_DURATION.count() << " μs)" << std::endl;
 
     cv::Point2f cvVecMove_base;
-    static auto next_trigger = std::chrono::steady_clock::now() + 1s;
     
     for (int i = 0; i < TOTAL_FRAMES; ++i) {
         // Calculate precise target time for this frame
@@ -91,8 +90,6 @@ int main(int argc, char* argv[]) {
         {
             textWriter.open("flow_txt_data.txt");
         }
-
-        cv::cvtColor(videoData.back(), videoData.back(), cv::COLOR_GRAY2BGR);
 
         // Draw mean flow arrow in corner
         cv::Point corner(100, 100);
