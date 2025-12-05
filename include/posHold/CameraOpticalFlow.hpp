@@ -20,7 +20,7 @@ private:
     cv::Mat m_prevFrame;
     std::vector<cv::Point2f> m_prevPoints;
     cv::Point2f m_opticalFlow;
-    static constexpr double s_alpha = 0.3;
+    static constexpr double s_alpha = 0.15;
 };
 
 #endif
