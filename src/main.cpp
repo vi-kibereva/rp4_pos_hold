@@ -86,33 +86,29 @@ int main(int argc, char* argv[]) {
         videoData[i] = drone.getGrayscaleImage();
         
         // Visualization
+        if (!videoWriter.isOpened())
+        {
+            videoWriter.open("flow_output.avi",
+                        cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
+                        10,
+                        grayFrame.size());
+        }
+        if (!textWriter.is_open())
+        {
+            textWriter.open("flow_txt_data.txt");
+        }
 
         cv::cvtColor(videoData[i], videoData[i], cv::COLOR_GRAY2BGR);
-
-        double scale = 0.5;  // scale for flow arrows
-
-        for (size_t i = 0; i < goodPrevPoints.size(); ++i)
-        {
-            cv::Point p0(cvRound(goodPrevPoints[i].x), cvRound(goodPrevPoints[i].y));
-            cv::Point p1(
-                cvRound(goodPrevPoints[i].x + (goodNextPoints[i].x - goodPrevPoints[i].x) * scale),
-                cvRound(goodPrevPoints[i].y + (goodNextPoints[i].y - goodPrevPoints[i].y) * scale)
-            );
-            cv::arrowedLine(videoData[i], p0, p1, cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
-        }
 
         // Draw mean flow arrow in corner
         cv::Point corner(100, 100);
         cv::Point cornerTo(
-            corner.x + cvRound(m_opticalFlow.x),
-            corner.y + cvRound(m_opticalFlow.y)
+            corner.x + cvRound(cvVecMove.x),
+            corner.y + cvRound(cvVecMove.y)
         );
         cv::arrowedLine(videoData[i], corner, cornerTo, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
-
-        if (text_writer.is_open())
-        {
-            textWriter << "x: " << m_opticalFlow.x << ", " << "y: " << m_opticalFlow.y << '\n';
-        }
+        
+        textWriter << "x: " << cvVecMove.x << ", " << "y: " << cvVecMove.y << '\n';
     }
 
 
