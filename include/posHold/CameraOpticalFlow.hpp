@@ -13,6 +13,8 @@ public:
 
     [[nodiscard]] cv::Point2f getOpticalFlow() const;
 
+    ~CameraOpticalFlow();
+
 private:
     Drone* m_drone;
     cv::Mat m_prevFrame;

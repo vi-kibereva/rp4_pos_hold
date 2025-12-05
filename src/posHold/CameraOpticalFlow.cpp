@@ -27,7 +27,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     {
         g_writer.open("flow_output.avi",
                       cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
-                      30,
+                      10,
                       grayFrame.size());
     }
     if (!text_writer.is_open())
@@ -141,7 +141,6 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     if (g_writer.isOpened())
     {
         videoData.push_back(vis);
-        // g_writer.write(vis);
     }
     if (text_writer.is_open())
     {
@@ -155,4 +154,12 @@ void CameraOpticalFlow::calc(int x, int y, int len)
 cv::Point2f CameraOpticalFlow::getOpticalFlow() const
 {
     return m_opticalFlow;
+}
+
+CameraOpticalFlow::~CameraOpticalFlow()
+{
+    for (const cv::Mat& mat : videoData)
+    {
+        g_writer.write(mat);
+    }
 }
