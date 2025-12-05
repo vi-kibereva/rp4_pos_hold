@@ -126,16 +126,12 @@ void CameraOpticalFlow::calc(int x, int y, int len)
     }
 
     // Draw mean flow arrow in corner
-    cv::Point corner(10, 10);
+    cv::Point corner(100, 100);
     cv::Point cornerTo(
         corner.x + cvRound(m_opticalFlow.x),
         corner.y + cvRound(m_opticalFlow.y)
     );
     cv::arrowedLine(vis, corner, cornerTo, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
-
-    char buf[100];
-    snprintf(buf, sizeof(buf), "Avg flow: (%.2f, %.2f)", m_opticalFlow.x, m_opticalFlow.y);
-    cv::putText(vis, buf, cv::Point(50, 90), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
 
     // Write to video and text
     if (g_writer.isOpened())
