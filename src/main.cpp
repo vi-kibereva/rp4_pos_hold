@@ -10,7 +10,7 @@
 using namespace std::chrono_literals;
 
 int main(int argc, char* argv[]) {
-    const char* port = argc > 1 ? argv[1] : "/dev/ttyAMA0";
+    const char* port = argc > 1 ? argv[1] : "/dev/serial0";
 
     msp::Msp* msp;
 	try {
@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Writing video file..." << std::endl;
 
     cv::VideoWriter videoWriter;
-    videoWriter.open("flow_output.avi",
+    videoWriter.open("flow_output.mp4",
                     cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
                     TARGET_FPS,
                     videoData.front().size());
