@@ -56,6 +56,18 @@ public:
   uint32x2_t calculate_raw_rc(float32x2_t current_position,
                               float32x2_t desired_position = vdup_n_f32(0.0f));
 
+  /**
+   * @brief Reset PID controller state
+   *
+   * Clears integral accumulator and derivative terms to prevent windup when
+   * changing setpoint. Should be called when the target position changes
+   * significantly.
+   *
+   * @param current_position Optional current position to initialize last_value_
+   *                        (prevents derivative kick on next calculation)
+   */
+  void reset(float32x2_t current_position = vdup_n_f32(0.0f));
+
 private:
   float k_p_ = 0.0f;  ///< Proportional gain
   float k_i_ = 0.0f;  ///< Integral gain

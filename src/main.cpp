@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     constexpr uint16_t YAW_VALUE = 1500;       // Neutral yaw
 
     // Default PID gains
-    float k_p = -10.0f;
+    float k_p = -100.0f;
     float k_i = 1.0f;
     float k_d = 1.0f;
     float k_df = 0.0f;
@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
 
     // 5. Setup telemetry logging
     std::ofstream telemetry_log("position_hold_telemetry.csv");
-    telemetry_log << "timestamp,pos_x,pos_y,vel_x,vel_y,roll_pwm,pitch_pwm" << std::endl;
+    telemetry_log << "timestamp,pos_x,pos_y,target_x,target_y,vel_x,vel_y,roll_pwm,pitch_pwm,aux3,aux3_active" << std::endl;
     telemetry_log << std::fixed << std::setprecision(6);
 
     // 6. Wait for stabilization
@@ -115,6 +115,9 @@ int main(int argc, char* argv[]) {
     // State variables
     cv::Point2f current_position(0.0f, 0.0f);   // Integrated position (start at origin)
     cv::Point2f previous_velocity(0.0f, 0.0f);  // For trapezoidal integration
+    cv::Point2f target_position(0.0f, 0.0f);    // Dynamic target position
+    uint16_t previous_aux3 = 1000;               // For rising edge detection (start LOW)
+    bool aux3_active = false;                    // Current AUX3 state
 
     auto loop_start = std::chrono::steady_clock::now();
     auto frame_duration = std::chrono::milliseconds(1000 / CONTROL_RATE_HZ);
@@ -145,38 +148,87 @@ int main(int argc, char* argv[]) {
             }
             previous_velocity = velocity;
 
+            // Read AUX3 channel for MSP override mode detection
+            uint16_t current_aux3 = 1000;  // Default to LOW in case of read failure
+            bool msp_read_success = false;
+
+            try {
+                msp::RcData rc_data = msp->rc();
+                // AUX3 is channel index 6 (0-indexed: roll, pitch, throttle, yaw, aux1, aux2, aux3)
+                if (rc_data.channel_count > 6) {
+                    current_aux3 = rc_data.channels[6];
+                    msp_read_success = true;
+                } else {
+                    std::cerr << "[WARNING] Not enough RC channels ("
+                              << static_cast<int>(rc_data.channel_count)
+                              << "), expected >= 7. Using default AUX3=1000" << std::endl;
+                }
+            } catch (const std::exception& ex) {
+                std::cerr << "[WARNING] Failed to read RC channels: " << ex.what()
+                          << ". Using default AUX3=1000" << std::endl;
+            }
+
+            // Detect rising edge (LOW -> HIGH transition)
+            constexpr uint16_t AUX3_THRESHOLD = 1500;
+            bool current_aux3_state = current_aux3 >= AUX3_THRESHOLD;
+            bool rising_edge = !aux3_active && current_aux3_state;
+
+            if (rising_edge) {
+                std::cout << "[MODE] AUX3 rising edge detected! Zeroing position hold target..." << std::endl;
+                std::cout << "[MODE] Current position: (" << current_position.x << ", "
+                          << current_position.y << ") -> new target" << std::endl;
+
+                // Set target to current position (zero the error)
+                target_position = current_position;
+
+                // Reset PID state to prevent windup from old target
+                float32x2_t current_neon = {current_position.x, current_position.y};
+                pid.reset(current_neon);
+
+                std::cout << "[MODE] PID state reset complete" << std::endl;
+            }
+
+            // Update state for next iteration
+            aux3_active = current_aux3_state;
+
             // Prepare position for PID (convert to NEON format)
             float32x2_t position_neon = {current_position.x, current_position.y};
-            float32x2_t target_neon = vdup_n_f32(0.0f);  // Target = (0,0) - hold origin
+            float32x2_t target_neon = {target_position.x, target_position.y};
 
             // Calculate PID output
-            uint32x2_t pwm_output = pid.calculate_raw_rc(position_neon, target_neon);
+            uint32x2_t pid_output = pid.calculate_raw_rc(position_neon, target_neon);
 
             // Extract PWM values from NEON vector
-            uint32_t pwm_values[2];
-            vst1_u32(pwm_values, pwm_output);
-            uint16_t roll_pwm = static_cast<uint16_t>(pwm_values[0]);
-            uint16_t pitch_pwm = static_cast<uint16_t>(pwm_values[1]);
+            uint32_t pid_values[2];
+            vst1_u32(pid_values, pid_output);
+            uint16_t roll_pid = static_cast<uint16_t>(pid_values[0]);
+            uint16_t pitch_pid = static_cast<uint16_t>(pid_values[1]);
 
             // Send RC commands
-            msp::SetRawRcData rc_command(roll_pwm, pitch_pwm, THROTTLE_VALUE, YAW_VALUE);
+            msp::SetRawRcData rc_command(roll_pid, pitch_pid, THROTTLE_VALUE, YAW_VALUE);
             msp->setRawRc(rc_command);
 
             // Log telemetry
             float timestamp = frame_count / static_cast<float>(CONTROL_RATE_HZ);
             telemetry_log << timestamp << ","
                          << current_position.x << "," << current_position.y << ","
+                         << target_position.x << "," << target_position.y << ","
                          << velocity.x << "," << velocity.y << ","
-                         << roll_pwm << "," << pitch_pwm << std::endl;
+                         << roll_pid << "," << pitch_pid << ","
+                         << current_aux3 << "," << (aux3_active ? 1 : 0) << std::endl;
 
             // Console status display (every second)
             if (frame_count % CONTROL_RATE_HZ == 0) {
                 std::cout << "[" << (frame_count / CONTROL_RATE_HZ) << "s] "
+                         << (aux3_active ? "[MSP_OVERRIDE] " : "[NORMAL] ")
                          << "Pos: (" << std::setw(6) << current_position.x << ", "
                          << std::setw(6) << current_position.y << ") "
+                         << "Target: (" << std::setw(6) << target_position.x << ", "
+                         << std::setw(6) << target_position.y << ") "
                          << "Vel: (" << std::setw(5) << velocity.x << ", "
                          << std::setw(5) << velocity.y << ") "
-                         << "PWM: R=" << roll_pwm << " P=" << pitch_pwm << std::endl;
+                         << "PID: R=" << roll_pid << " P=" << pitch_pid
+                         << " AUX3=" << current_aux3 << std::endl;
             }
 
         } catch (const std::exception& ex) {
