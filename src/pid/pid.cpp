@@ -71,3 +71,10 @@ uint32x2_t PidController::calculate_raw_rc(float32x2_t current_position,
 
 	return int_output;
 }
+
+void PidController::reset(float32x2_t current_position) {
+	integral_ = vdup_n_f32(0.0f);
+	filtered_derivative_ = vdup_n_f32(0.0f);
+	last_value_ = current_position;
+	// Note: last_time is preserved to maintain continuous dt calculation
+}

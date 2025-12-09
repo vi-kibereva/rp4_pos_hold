@@ -28,8 +28,13 @@ pkg_check_modules(LIBCAMERA REQUIRED IMPORTED_TARGET libcamera)
 # Collect all .cpp files in src/
 file(GLOB_RECURSE ALL_SRC "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
+list(FILTER ALL_SRC EXCLUDE REGEX ".*/main\\.cpp$")
+list(FILTER ALL_SRC EXCLUDE REGEX ".*/record_main\\.cpp$")
+
+set(COMMON_SRC ${ALL_SRC})
+
 # --- First executable: rp4_pos_hold1 ---
-add_executable(rp4_pos_hold1 ${ALL_SRC})
+add_executable(rp4_pos_hold1 ${CMAKE_SOURCE_DIR}/src/main.cpp ${COMMON_SRC})
 
 target_include_directories(rp4_pos_hold1 PRIVATE
   ${LIBCAMERA_INCLUDE_DIRS}
@@ -39,6 +44,25 @@ target_link_directories(rp4_pos_hold1 PRIVATE ${LIBCAMERA_LIBRARY_DIRS})
 
 target_link_libraries(
   rp4_pos_hold1 PRIVATE
+  ${LIBCAMERA_LIBRARIES}
+  ${OpenCV_LIBS}
+  lccv
+)
+
+add_executable(
+  rp4_recorder
+  ${CMAKE_SOURCE_DIR}/src/record_main.cpp
+  ${COMMON_SRC}
+)
+
+target_include_directories(rp4_recorder PRIVATE
+  ${LIBCAMERA_INCLUDE_DIRS}
+)
+
+target_link_directories(rp4_recorder PRIVATE ${LIBCAMERA_LIBRARY_DIRS})
+
+target_link_libraries(
+  rp4_recorder PRIVATE
   ${LIBCAMERA_LIBRARIES}
   ${OpenCV_LIBS}
   lccv
