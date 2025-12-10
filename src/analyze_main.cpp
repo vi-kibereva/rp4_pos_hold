@@ -60,7 +60,7 @@ class CsvDataLoader;
 class DroneAdapter {
 public:
     const CameraInfo cameraInfo = CameraInfo(
-        37.4 * CV_PI / 180,  // 37.4° FOV
+        37.4 * CV_PI / 180,  // 37.4 deg FOV
         1920, 1080, 0.01, 1000.0, 15
     );
 
