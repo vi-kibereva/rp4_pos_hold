@@ -394,7 +394,7 @@ int main(int argc, char* argv[]) {
         // Initialize PID controller (gains matching main.cpp defaults)
         cv::Point2f cumulative_position(0.0f, 0.0f);  // Cumulative position in meters
         cv::Point2f target_position(0.0f, 0.0f);      // Hold at origin
-        PidController pid(200.0f, 10.0f, 0.0f, 0.0f);
+        PidController pid(50.0f, 1.0f, 1.0f, 0.0f);
         std::cout << "[INIT] PID controller initialized (k_p=-100, k_i=1.0, k_d=1.0)" << std::endl;
 
         // Output CSV

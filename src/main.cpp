@@ -32,9 +32,9 @@ int main(int argc, char* argv[]) {
     constexpr uint16_t YAW_VALUE = 1500;       // Neutral yaw
 
     // Default PID gains
-    float k_p = 50.0f;
-    float k_i = 1.0f;
-    float k_d = 1.0f;
+    float k_p = 500.0f;
+    float k_i = 0.0f;
+    float k_d = 0.0f;
     float k_df = 0.0f;
 
     // Parse command-line arguments
@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
             }
 
             // Detect rising edge (LOW -> HIGH transition)
-            constexpr uint16_t AUX3_THRESHOLD = 1500;
+            constexpr uint16_t AUX3_THRESHOLD = 1700;
             bool current_aux3_state = current_aux3 >= AUX3_THRESHOLD;
             bool rising_edge = !aux3_active && current_aux3_state;
 
@@ -199,7 +199,7 @@ int main(int argc, char* argv[]) {
             float error_y = target_position.y - current_position.y;
 
             // Get yaw in radians
-            double yaw = m_drone->getGyroData().yaw;
+            double yaw = drone->getGyroData().yaw;
             double cy = std::cos(yaw);
             double sy = std::sin(yaw);
 
