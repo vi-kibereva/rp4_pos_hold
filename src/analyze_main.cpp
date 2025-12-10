@@ -155,6 +155,15 @@ public:
     }
 };
 
+// Wrapper functions for OfflineDroneAdapter compatibility
+AltitudeRecord interpolateAltitude(CsvDataLoader* loader, double timestamp) {
+    return loader->interpolateAltitude(timestamp);
+}
+
+AttitudeRecord interpolateAttitude(CsvDataLoader* loader, double timestamp) {
+    return loader->interpolateAttitude(timestamp);
+}
+
 // DroneAdapter implementation
 void DroneAdapter::setFrame(const cv::Mat& frame, double timestamp) {
     current_frame = frame.clone();
@@ -395,7 +404,7 @@ int main(int argc, char* argv[]) {
         cv::Point2f cumulative_position(0.0f, 0.0f);  // Cumulative position in meters
         cv::Point2f target_position(0.0f, 0.0f);      // Hold at origin
         PidController pid(50.0f, 1.0f, 1.0f, 0.0f);
-        std::cout << "[INIT] PID controller initialized (k_p=-100, k_i=1.0, k_d=1.0)" << std::endl;
+        std::cout << "[INIT] PID controller initialized (k_p=50, k_i=1.0, k_d=1.0)" << std::endl;
 
         // Output CSV
         std::string output_path = csv_dir + "/flow_data.csv";

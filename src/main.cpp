@@ -191,26 +191,22 @@ int main(int argc, char* argv[]) {
             // Update state for next iteration
             aux3_active = current_aux3_state;
 
-            // Prepare position for PID (convert to NEON format)
-            float32x2_t position_neon = {current_position.x, current_position.y};
-
-            // World-frame error
-            float error_x = target_position.x - current_position.x;
-            float error_y = target_position.y - current_position.y;
 
             // Get yaw in radians
             double yaw = drone->getGyroData().yaw;
             double cy = std::cos(yaw);
             double sy = std::sin(yaw);
 
-            // Rotate WORLD error to BODY error (rotation by -yaw)
-            float e_body_x =  cy * error_x + sy * error_y;
-            float e_body_y = -sy * error_x + cy * error_y;
+            // Prepare position for PID (convert to NEON format)
+            float32x2_t position_neon = {
+                cy * current_position.x + sy * current_position.y,
+                -sy * current_position.x + cy * current_position.y
+            };
 
             // Compute rotated target in body frame
             float32x2_t target_neon = {
-                current_position.x + e_body_x,
-                current_position.y + e_body_y
+                cy * target_position.x + sy * target_position.y,
+                -sy * target_position.x + cy * target_position.y
             };
 
             // Call PID
