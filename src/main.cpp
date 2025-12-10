@@ -32,9 +32,9 @@ int main(int argc, char* argv[]) {
     constexpr uint16_t YAW_VALUE = 1500;       // Neutral yaw
 
     // Default PID gains
-    float k_p = 100.0f;
-    float k_i = 1.0f;
-    float k_d = 1.0f;
+    float k_p = 200.0f;
+    float k_i = 0.0f;
+    float k_d = 0.0f;
     float k_df = 0.0f;
 
     // Parse command-line arguments
