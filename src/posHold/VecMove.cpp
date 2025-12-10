@@ -22,13 +22,25 @@ void VecMove::calc()
             / std::sqrt((m_drone->cameraInfo.resolutionX * m_drone->cameraInfo.resolutionX
                 + m_drone->cameraInfo.resolutionY * m_drone->cameraInfo.resolutionY
             ));
-        return;
     }
-
-    cv::Point2f meanOpticalFlow = m_cameraOpticalFlow.getOpticalFlow();
+    else
+    {
+        cv::Point2f meanOpticalFlow = m_cameraOpticalFlow.getOpticalFlow();
     
-    m_vecMove = (m_drone->getAltitude() / m_drone->cameraInfo.focalLength)
-              * (m_vecDown.getVecDownDisplacement() * s_vecDownDisplacementCoef - meanOpticalFlow);
+        m_vecMove = (m_drone->getAltitude() / m_drone->cameraInfo.focalLength)
+                  * (m_vecDown.getVecDownDisplacement() - meanOpticalFlow);
+    }
+    
+    double yaw = m_drone->getGyroData().yaw;
+
+    double cy = std::cos(yaw);
+    double sy = std::sin(yaw);
+
+    cv::Point2f v_world;
+    v_world.x =  cy * m_vecMove.x - sy * m_vecMove.y;
+    v_world.y =  sy * m_vecMove.x + cy * m_vecMove.y;
+
+    m_vecMove = v_world;
 
     m_hasPrev = true;
 }
