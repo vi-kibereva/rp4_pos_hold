@@ -122,6 +122,7 @@ int main(int argc, char* argv[]) {
     auto loop_start = std::chrono::steady_clock::now();
     auto frame_duration = std::chrono::milliseconds(1000 / CONTROL_RATE_HZ);
     int frame_count = 0;
+    double start_yaw = drone->getGyroData().yaw;
 
     while (running) {
         // Frame timing - sleep until target time
@@ -181,6 +182,8 @@ int main(int argc, char* argv[]) {
                 // Set target to current position (zero the error)
                 target_position = current_position;
 
+                start_yaw = drone->getGyroData().yaw;
+
                 // Reset PID state to prevent windup from old target
                 float32x2_t current_neon = {current_position.x, current_position.y};
                 pid.reset(current_neon);
@@ -191,9 +194,8 @@ int main(int argc, char* argv[]) {
             // Update state for next iteration
             aux3_active = current_aux3_state;
 
-
             // Get yaw in radians
-            double yaw = drone->getGyroData().yaw;
+            double yaw = drone->getGyroData().yaw - start_yaw;
             double cy = std::cos(yaw);
             double sy = std::sin(yaw);
 
