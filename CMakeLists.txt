@@ -34,6 +34,7 @@ file(GLOB_RECURSE ALL_SRC "${CMAKE_SOURCE_DIR}/src/*.cpp")
 list(FILTER ALL_SRC EXCLUDE REGEX ".*/main\\.cpp$")
 list(FILTER ALL_SRC EXCLUDE REGEX ".*/record_main\\.cpp$")
 list(FILTER ALL_SRC EXCLUDE REGEX ".*/analyze_main\\.cpp$")
+list(FILTER ALL_SRC EXCLUDE REGEX ".*/OfflineDroneAdapter\\.cpp$")
 
 set(COMMON_SRC ${ALL_SRC})
 
@@ -42,32 +43,32 @@ if(LIBCAMERA_FOUND)
   message(STATUS "libcamera found - building rp4_pos_hold1 and rp4_recorder")
   add_executable(rp4_pos_hold1 ${CMAKE_SOURCE_DIR}/src/main.cpp ${COMMON_SRC})
 
-target_include_directories(rp4_pos_hold1 PRIVATE
+  target_include_directories(rp4_pos_hold1 PRIVATE
   ${LIBCAMERA_INCLUDE_DIRS}
 )
 
-target_link_directories(rp4_pos_hold1 PRIVATE ${LIBCAMERA_LIBRARY_DIRS})
+  target_link_directories(rp4_pos_hold1 PRIVATE ${LIBCAMERA_LIBRARY_DIRS})
 
-target_link_libraries(
+  target_link_libraries(
   rp4_pos_hold1 PRIVATE
   ${LIBCAMERA_LIBRARIES}
   ${OpenCV_LIBS}
   lccv
 )
 
-add_executable(
+  add_executable(
   rp4_recorder
   ${CMAKE_SOURCE_DIR}/src/record_main.cpp
   ${COMMON_SRC}
 )
 
-target_include_directories(rp4_recorder PRIVATE
+  target_include_directories(rp4_recorder PRIVATE
   ${LIBCAMERA_INCLUDE_DIRS}
 )
 
-target_link_directories(rp4_recorder PRIVATE ${LIBCAMERA_LIBRARY_DIRS})
+  target_link_directories(rp4_recorder PRIVATE ${LIBCAMERA_LIBRARY_DIRS})
 
-target_link_libraries(
+  target_link_libraries(
   rp4_recorder PRIVATE
   ${LIBCAMERA_LIBRARIES}
   ${OpenCV_LIBS}
@@ -83,6 +84,7 @@ add_executable(
   rp4_analyzer
   ${CMAKE_SOURCE_DIR}/src/analyze_main.cpp
   ${CMAKE_SOURCE_DIR}/src/pid/pid.cpp
+  ${CMAKE_SOURCE_DIR}/src/posHold/OfflineDroneAdapter.cpp
 )
 
 target_include_directories(rp4_analyzer PRIVATE
