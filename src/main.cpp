@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     constexpr uint16_t YAW_VALUE = 1500;       // Neutral yaw
 
     // Default PID gains
-    float k_p = -100.0f;
+    float k_p = 50.0f;
     float k_i = 1.0f;
     float k_d = 1.0f;
     float k_df = 0.0f;
@@ -193,9 +193,27 @@ int main(int argc, char* argv[]) {
 
             // Prepare position for PID (convert to NEON format)
             float32x2_t position_neon = {current_position.x, current_position.y};
-            float32x2_t target_neon = {target_position.x, target_position.y};
 
-            // Calculate PID output
+            // World-frame error
+            float error_x = target_position.x - current_position.x;
+            float error_y = target_position.y - current_position.y;
+
+            // Get yaw in radians
+            double yaw = m_drone->getGyroData().yaw;
+            double cy = std::cos(yaw);
+            double sy = std::sin(yaw);
+
+            // Rotate WORLD error to BODY error (rotation by -yaw)
+            float e_body_x =  cy * error_x + sy * error_y;
+            float e_body_y = -sy * error_x + cy * error_y;
+
+            // Compute rotated target in body frame
+            float32x2_t target_neon = {
+                current_position.x + e_body_x,
+                current_position.y + e_body_y
+            };
+
+            // Call PID
             uint32x2_t pid_output = pid.calculate_raw_rc(position_neon, target_neon);
 
             // Extract PWM values from NEON vector

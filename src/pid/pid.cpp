@@ -54,8 +54,8 @@ uint32x2_t PidController::calculate_raw_rc(float32x2_t current_position,
 	output = vadd_f32(output, base_speed);
 	uint32x2_t int_output = vcvt_u32_f32(output);
 
-	const uint32_t MAX_VALUE = 2000u;
-	const uint32_t MIN_VALUE = 1000u;
+	const uint32_t MAX_VALUE = 1600u;
+	const uint32_t MIN_VALUE = 1400u;
 	uint32x2_t max_value = vdup_n_u32(MAX_VALUE);
 	uint32x2_t min_value = vdup_n_u32(MIN_VALUE);
 	int_output = vmin_u32(int_output, max_value);
