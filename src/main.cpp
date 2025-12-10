@@ -199,7 +199,7 @@ int main(int argc, char* argv[]) {
             float error_y = target_position.y - current_position.y;
 
             // Get yaw in radians
-            double yaw = m_drone->getGyroData().yaw;
+            double yaw = drone->getGyroData().yaw;
             double cy = std::cos(yaw);
             double sy = std::sin(yaw);
 
