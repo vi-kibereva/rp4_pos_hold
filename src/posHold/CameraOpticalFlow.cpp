@@ -95,13 +95,16 @@ void CameraOpticalFlow::calc(int x, int y, int len)
 
     for (size_t i = 0; i < nextPoints.size(); ++i)
     {
-        if (status[i])
+        if (!status[i] || nextPoints[i].x < x0 || nextPoints[i].x > x1
+            || nextPoints[i].y < y0 || nextPoints[i].y > y1)
         {
-            cv::Point2f f = nextPoints[i] - m_prevPoints[i];
-            flowSum += f;
-            goodNextPoints.push_back(nextPoints[i]);
-            goodPrevPoints.push_back(m_prevPoints[i]);
+            continue;
         }
+
+        cv::Point2f f = nextPoints[i] - m_prevPoints[i];
+        flowSum += f;
+        goodNextPoints.push_back(nextPoints[i]);
+        goodPrevPoints.push_back(m_prevPoints[i]);
     }
 
     if (!goodNextPoints.empty())
