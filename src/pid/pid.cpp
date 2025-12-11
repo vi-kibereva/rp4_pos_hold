@@ -13,7 +13,7 @@ uint32x2_t PidController::calculate_raw_rc(float32x2_t current_position,
 										   float32x2_t desired_position) {
 	auto current_time = std::chrono::duration_cast<std::chrono::microseconds>(
 			std::chrono::steady_clock::now().time_since_epoch());
-	float32x2_t error = vsub_f32(desired_position, current_position);
+	float32x2_t error = vsub_f32(current_position, desired_position);
 	float dt_sec = (current_time - last_time).count() / 1000000.0f;
 	last_time = current_time;
 
@@ -22,7 +22,7 @@ uint32x2_t PidController::calculate_raw_rc(float32x2_t current_position,
 		filtered_derivative_ = vdup_n_f32(0.0f);
 	} else {
 		float32x2_t derivative_raw =
-				vmul_n_f32(vsub_f32(last_value_, current_position), 1.0f / dt_sec);
+				vmul_n_f32(vsub_f32(current_position, last_value_), 1.0f / dt_sec);
 
 		float32x2_t first_part =
 				vfma_n_f32(filtered_derivative_, filtered_derivative_, -k_df_);
@@ -65,7 +65,6 @@ uint32x2_t PidController::calculate_raw_rc(float32x2_t current_position,
 	uint32_t my_values[2];
 	vst1_u32(my_values, int_output);
 
-	printf("PID Output PWM: x=%d, y=%d\n", my_values[0], my_values[1]);
 	last_value_ = current_position;
 
 

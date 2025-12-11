@@ -9,26 +9,20 @@
 #include <stdexcept>
 #include <cmath>
 
-// Global variable required by optical flow visualization
 cv::Mat grayFrame;
 
-// CSV Data Structures
 struct AltitudeRecord {
     double timestamp;
-    double altitude;  // cm
-    double vario;     // cm/s
+    double altitude;
+    double vario;
 };
 
 struct AttitudeRecord {
     double timestamp;
-    double roll;   // degrees
-    double pitch;  // degrees
-    double yaw;    // degrees
+    double roll;
+    double pitch;
+    double yaw;
 };
-
-// =========================================================================
-// DRONE ADAPTER (replaces OfflineDroneAdapter to avoid header dependencies)
-// =========================================================================
 
 struct CameraInfo {
     CameraInfo(double fov, int resX, int resY, double minD, double maxD, int f) :
@@ -49,9 +43,6 @@ struct GyroData {
     double roll, pitch, yaw;
 };
 
-// =========================================================================
-// PID CONTROLLER INTEGRATION
-// =========================================================================
 
 #include "pid/pid.hpp"
 
@@ -75,10 +66,6 @@ public:
     double getAltitude();
 };
 
-// =========================================================================
-// CSV DATA LOADER
-// =========================================================================
-
 class CsvDataLoader {
 public:
     std::vector<AltitudeRecord> altitude_data;
@@ -89,7 +76,7 @@ public:
         if (!file.is_open()) throw std::runtime_error("Cannot open altitude CSV: " + path);
 
         std::string line;
-        std::getline(file, line);  // Skip header
+        std::getline(file, line);
 
         while (std::getline(file, line)) {
             std::stringstream ss(line);
@@ -108,7 +95,7 @@ public:
         if (!file.is_open()) throw std::runtime_error("Cannot open attitude CSV: " + path);
 
         std::string line;
-        std::getline(file, line);  // Skip header
+        std::getline(file, line);
 
         while (std::getline(file, line)) {
             std::stringstream ss(line);
@@ -155,7 +142,14 @@ public:
     }
 };
 
-// DroneAdapter implementation
+AltitudeRecord interpolateAltitude(CsvDataLoader* loader, double timestamp) {
+    return loader->interpolateAltitude(timestamp);
+}
+
+AttitudeRecord interpolateAttitude(CsvDataLoader* loader, double timestamp) {
+    return loader->interpolateAttitude(timestamp);
+}
+
 void DroneAdapter::setFrame(const cv::Mat& frame, double timestamp) {
     current_frame = frame.clone();
     current_timestamp = timestamp;
@@ -178,9 +172,6 @@ double DroneAdapter::getAltitude() {
     return csv_loader->interpolateAltitude(current_timestamp).altitude / 100.0;  // cm to m
 }
 
-// =========================================================================
-// OPTICAL FLOW (inlined from CameraOpticalFlow.cpp)
-// =========================================================================
 
 class OpticalFlow {
 public:
@@ -246,10 +237,6 @@ public:
     cv::Point2f getOpticalFlow() const { return opticalFlow; }
 };
 
-// =========================================================================
-// VECDOWN (inlined from VecDown.cpp)
-// =========================================================================
-
 class VecDown {
 public:
     DroneAdapter* drone;
@@ -301,10 +288,6 @@ public:
     cv::Point2f getVecDownDisplacement() const { return vecDownDisplacement; }
 };
 
-// =========================================================================
-// VECMOVE (inlined from VecMove.cpp)
-// =========================================================================
-
 class VecMove {
 public:
     DroneAdapter* drone;
@@ -336,10 +319,6 @@ public:
     cv::Point2f getVecMove() const { return vecMove; }
 };
 
-// =========================================================================
-// UTILITY FUNCTIONS
-// =========================================================================
-
 std::string expandTilde(const std::string& path) {
     if (path.empty() || path[0] != '~') return path;
     const char* home = getenv("HOME");
@@ -352,10 +331,6 @@ std::string extractDirectory(const std::string& filepath) {
     return (pos == std::string::npos) ? "." : filepath.substr(0, pos);
 }
 
-// =========================================================================
-// MAIN
-// =========================================================================
-
 int main(int argc, char* argv[]) {
     std::cout << "\n[INIT] Video Optical Flow Analyzer Starting..." << std::endl;
 
@@ -366,13 +341,11 @@ int main(int argc, char* argv[]) {
     std::cout << "[INIT] CSV directory: " << csv_dir << std::endl;
 
     try {
-        // Load CSV
         std::cout << "\n[LOAD] Loading CSV data..." << std::endl;
         CsvDataLoader csv_loader;
         csv_loader.loadAltitude(csv_dir + "/altitude_data.csv");
         csv_loader.loadAttitude(csv_dir + "/attitude_data.csv");
 
-        // Open video
         std::cout << "\n[VIDEO] Opening video file..." << std::endl;
         cv::VideoCapture video(video_path);
         if (!video.isOpened()) throw std::runtime_error("Cannot open video: " + video_path);
@@ -385,19 +358,16 @@ int main(int argc, char* argv[]) {
         std::cout << "[VIDEO] FPS: " << fps << std::endl;
         std::cout << "[VIDEO] Total frames: " << total_frames << std::endl;
 
-        // Initialize
         std::cout << "\n[INIT] Initializing optical flow (FOV=37.4°)..." << std::endl;
         DroneAdapter drone;
         drone.csv_loader = &csv_loader;
         VecMove vec_move(drone);
 
-        // Initialize PID controller (gains matching main.cpp defaults)
-        cv::Point2f cumulative_position(0.0f, 0.0f);  // Cumulative position in meters
-        cv::Point2f target_position(0.0f, 0.0f);      // Hold at origin
+        cv::Point2f cumulative_position(0.0f, 0.0f);
+        cv::Point2f target_position(0.0f, 0.0f);
         PidController pid(50.0f, 1.0f, 1.0f, 0.0f);
-        std::cout << "[INIT] PID controller initialized (k_p=-100, k_i=1.0, k_d=1.0)" << std::endl;
+        std::cout << "[INIT] PID controller initialized (k_p=50, k_i=1.0, k_d=1.0)" << std::endl;
 
-        // Output CSV
         std::string output_path = csv_dir + "/flow_data.csv";
         std::ofstream flow_csv(output_path);
         if (!flow_csv.is_open()) throw std::runtime_error("Cannot create: " + output_path);
@@ -405,42 +375,34 @@ int main(int argc, char* argv[]) {
         flow_csv << "timestamp,x_change,y_change,roll_cmd,pitch_cmd\n" << std::fixed << std::setprecision(6);
         std::cout << "[OUTPUT] Writing to: " << output_path << std::endl;
 
-        // Process frames
         std::cout << "\n[PROCESS] Processing frames...\n" << std::endl;
         int frame_idx = 0;
         cv::Mat frame;
 
         while (video.read(frame) && frame_idx < total_frames) {
             double timestamp = frame_idx / fps;
-            float dt = 1.0f / fps;  // Time between frames
+            float dt = 1.0f / fps;
 
             drone.setFrame(frame, timestamp);
             vec_move.calc();
             cv::Point2f displacement_m = vec_move.getVecMove();
 
-            // Convert meters/frame to cm/frame for CSV output
             float x_cm = displacement_m.x * 100.0f;
             float y_cm = displacement_m.y * 100.0f;
 
-            // Update cumulative position (in meters for PID)
             cumulative_position.x += displacement_m.x;
             cumulative_position.y += displacement_m.y;
 
-            // Calculate PID control commands
-            // Convert position to NEON vectors
             float32x2_t pos_neon = {cumulative_position.x, cumulative_position.y};
             float32x2_t target_neon = {target_position.x, target_position.y};
 
-            // Calculate RC commands using real PID controller
             uint32x2_t rc_output = pid.calculate_raw_rc(pos_neon, target_neon);
 
-            // Extract PWM values
             uint32_t rc_values[2];
             vst1_u32(rc_values, rc_output);
             uint16_t roll_cmd = static_cast<uint16_t>(rc_values[0]);
             uint16_t pitch_cmd = static_cast<uint16_t>(rc_values[1]);
 
-            // Write to CSV: timestamp, x_change, y_change, roll_cmd, pitch_cmd
             flow_csv << timestamp << ","
                      << x_cm << ","
                      << y_cm << ","
