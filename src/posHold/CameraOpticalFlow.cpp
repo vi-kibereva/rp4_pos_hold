@@ -117,6 +117,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
 
     m_prevPoints = goodNextPoints;
 
+    /*
     // Add optical flow arrows
 
     cv::cvtColor(grayFrame, grayFrame, cv::COLOR_GRAY2BGR);
@@ -132,6 +133,7 @@ void CameraOpticalFlow::calc(int x, int y, int len)
         );
         cv::arrowedLine(grayFrame, p0, p1, cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
     }
+    */
 
     /*
     // Visualization
