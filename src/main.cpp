@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
                               << static_cast<int>(rc_data.channel_count)
                               << "), expected >= 7. Using default AUX3=1000" << std::endl;
                 }
-                auto time_taken = std::chrono::duration<double, std::nano>(clock::now() - start);
+                time_taken = std::chrono::duration<double, std::nano>(clock::now() - start);
                 perf_log << "MSP," << time_taken.count() << std::endl;
             } catch (const std::exception& ex) {
                 std::cerr << "[WARNING] Failed to read RC channels: " << ex.what()
@@ -191,7 +191,7 @@ int main(int argc, char* argv[]) {
 
             start = clock::now();
             uint32x2_t pid_output = pid.calculate_raw_rc(position_neon, target_neon);
-            auto time_taken = std::chrono::duration<double, std::nano>(clock::now() - start);
+            time_taken = std::chrono::duration<double, std::nano>(clock::now() - start);
             perf_log << "PID," << time_taken.count() << std::endl;
             uint32_t pid_values[2];
             vst1_u32(pid_values, pid_output);
@@ -220,7 +220,7 @@ int main(int argc, char* argv[]) {
                           << "PID: R=" << roll_pid << " P=" << pitch_pid << " AUX3=" << current_aux3
                           << std::endl;
             }
-            auto time_taken = std::chrono::duration<double, std::nano>(clock::now() - start);
+            time_taken = std::chrono::duration<double, std::nano>(clock::now() - start);
             perf_log << "Write to file," << time_taken.count() << std::endl;
         } catch (const std::exception& ex) {
             std::cerr << "[ERROR] Control loop exception: " << ex.what() << std::endl;
