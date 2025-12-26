@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <ratio>
 #include <thread>
 
 #include "msp/msp.hpp"
@@ -87,11 +88,13 @@ int main(int argc, char* argv[]) {
     std::cout << "[INIT] Creating PID controller..." << std::endl;
     PidController pid(k_p, k_i, k_d, k_df);
 
+    std::ofstream perf_log("perf_log.csv");
     std::ofstream telemetry_log("position_hold_telemetry.csv");
     telemetry_log << "timestamp,pos_x,pos_y,target_x,target_y,vel_x,vel_y,roll_"
                      "pwm,pitch_pwm,aux3,aux3_active"
                   << std::endl;
     telemetry_log << std::fixed << std::setprecision(6);
+    perf_log << "Operation, time_taken" << std::endl;
 
     std::cout << "[INIT] Waiting 2 seconds for system stabilization..." << std::endl;
     std::this_thread::sleep_for(2s);
@@ -108,7 +111,7 @@ int main(int argc, char* argv[]) {
     auto frame_duration = std::chrono::milliseconds(1000 / CONTROL_RATE_HZ);
     int frame_count = 0;
     double start_yaw = drone->getGyroData().yaw;
-
+    using clock = std::chrono::steady_clock;
     while (running) {
         auto target_time = loop_start + (frame_count * frame_duration);
         std::this_thread::sleep_until(target_time);
@@ -121,7 +124,10 @@ int main(int argc, char* argv[]) {
         }
 
         try {
+            auto start = clock::now();
             vecMove->calc();
+            auto time_taken = std::chrono::duration<double, std::nano>(clock::now() - start);
+            perf_log << "vecmove," << time_taken.count() << std::endl;
             cv::Point2f velocity = vecMove->getVecMove();
 
             if (frame_count > 0) {
@@ -134,6 +140,7 @@ int main(int argc, char* argv[]) {
             bool msp_read_success = false;
 
             try {
+                start = clock::now();
                 msp::RcData rc_data = msp->rc();
                 if (rc_data.channel_count > 6) {
                     current_aux3 = rc_data.channels[6];
@@ -143,6 +150,8 @@ int main(int argc, char* argv[]) {
                               << static_cast<int>(rc_data.channel_count)
                               << "), expected >= 7. Using default AUX3=1000" << std::endl;
                 }
+                auto time_taken = std::chrono::duration<double, std::nano>(clock::now() - start);
+                perf_log << "MSP," << time_taken.count() << std::endl;
             } catch (const std::exception& ex) {
                 std::cerr << "[WARNING] Failed to read RC channels: " << ex.what()
                           << ". Using default AUX3=1000" << std::endl;
@@ -180,8 +189,10 @@ int main(int argc, char* argv[]) {
             float32x2_t target_neon = {cy * target_position.x + sy * target_position.y,
                                        -sy * target_position.x + cy * target_position.y};
 
+            start = clock::now();
             uint32x2_t pid_output = pid.calculate_raw_rc(position_neon, target_neon);
-
+            auto time_taken = std::chrono::duration<double, std::nano>(clock::now() - start);
+            perf_log << "PID," << time_taken.count() << std::endl;
             uint32_t pid_values[2];
             vst1_u32(pid_values, pid_output);
             uint16_t roll_pid = static_cast<uint16_t>(pid_values[0]);
@@ -190,6 +201,7 @@ int main(int argc, char* argv[]) {
             msp::SetRawRcData rc_command(roll_pid, pitch_pid, THROTTLE_VALUE, YAW_VALUE);
             msp->setRawRc(rc_command);
 
+            start = clock::now();
             float timestamp = frame_count / static_cast<float>(CONTROL_RATE_HZ);
             telemetry_log << timestamp << "," << current_position.x << "," << current_position.y
                           << "," << target_position.x << "," << target_position.y << ","
@@ -208,7 +220,8 @@ int main(int argc, char* argv[]) {
                           << "PID: R=" << roll_pid << " P=" << pitch_pid << " AUX3=" << current_aux3
                           << std::endl;
             }
-
+            auto time_taken = std::chrono::duration<double, std::nano>(clock::now() - start);
+            perf_log << "Write to file," << time_taken.count() << std::endl;
         } catch (const std::exception& ex) {
             std::cerr << "[ERROR] Control loop exception: " << ex.what() << std::endl;
             // Continue loop - might recover
