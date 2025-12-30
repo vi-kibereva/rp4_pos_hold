@@ -1,45 +1,35 @@
 #include "posHold/Drone.hpp"
 
-Drone::Drone() :
-    m_camera(cameraInfo.resolutionY, cameraInfo.resolutionX, cameraInfo.fps)
-{
+Drone::Drone() : m_camera(cameraInfo.resolutionY, cameraInfo.resolutionX, cameraInfo.fps) {
     m_camera.start_camera();
 }
 
-Drone::Drone(msp::Msp& msp) :
-    m_msp{ &msp },
-    m_camera(cameraInfo.resolutionY, cameraInfo.resolutionX, cameraInfo.fps)
-{
+Drone::Drone(contracts::IMsp& msp)
+    : m_msp{&msp}, m_camera(cameraInfo.resolutionY, cameraInfo.resolutionX, cameraInfo.fps) {
     m_camera.start_camera();
 }
 
-[[nodiscard]] cv::Mat Drone::getGrayscaleImage()
-{
+[[nodiscard]] cv::Mat Drone::getGrayscaleImage() {
     cv::Mat frame = m_camera.get_frame();
     cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
     return frame;
 }
 
-[[nodiscard]] Drone::GyroData Drone::getGyroData()
-{
-    // gyroData.roll - absolute rotation angle (not velocity) around horizontal forward-backward world axis
-    // gyroData.pitch - absolute rotation angle (not velocity) around left-right world axis
-    // gyroData.yaw - absolute rotation angle (not velocity) around vertical world axis
+[[nodiscard]] Drone::GyroData Drone::getGyroData() {
+    // gyroData.roll - absolute rotation angle (not velocity) around horizontal
+    // forward-backward world axis gyroData.pitch - absolute rotation angle (not
+    // velocity) around left-right world axis gyroData.yaw - absolute rotation
+    // angle (not velocity) around vertical world axis
 
     msp::AttitudeData data = m_msp->attitude();
-    return {
-        data.roll_tenths * CV_PI / 1800,
-        data.pitch_tenths * CV_PI / 1800,
-        data.yaw_tenths * CV_PI / 1800
-    };
+    return {data.roll_tenths * CV_PI / 1800, data.pitch_tenths * CV_PI / 1800,
+            data.yaw_tenths * CV_PI / 1800};
 }
 
-[[nodiscard]] double Drone::getAltitude()
-{
+[[nodiscard]] double Drone::getAltitude() {
     return m_msp->altitude().altitude / 100.0;
 }
 
-Drone::~Drone()
-{
+Drone::~Drone() {
     m_camera.stop_camera();
 }

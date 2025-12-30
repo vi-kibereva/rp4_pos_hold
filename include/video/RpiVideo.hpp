@@ -1,30 +1,29 @@
 #ifndef RPI_VIDEO_HPP
 #define RPI_VIDEO_HPP
 
-#include <cstdint>
-#include <mutex>
-#include <condition_variable>
 #include <atomic>
 #include <chrono>
-
+#include <condition_variable>
+#include <cstdint>
+#include <mutex>
 #include <opencv2/opencv.hpp>
 
+#include "contracts/IVideo.hpp"
 #include "video/RpiCamera.hpp"
 
 namespace video {
 
-class RpiVideo
-{
-public:
+class RpiVideo : public contracts::IVideo {
+   public:
     explicit RpiVideo(std::uint32_t height = 1080, std::uint32_t width = 1920, int framerate = 30);
-    ~RpiVideo();
+    ~RpiVideo() override;
 
-    void start_camera();
-    void stop_camera();
+    void start_camera() override;
+    void stop_camera() override;
 
-    cv::Mat get_frame();
+    [[nodiscard]] cv::Mat get_frame() override;
 
-private:
+   private:
     cv::Mat shared_frame_;
     std::mutex mtx_;
     std::condition_variable cv_;
@@ -37,6 +36,6 @@ private:
     std::uint32_t width_;
 };
 
-} // namespace video
+}  // namespace video
 
-#endif // !RPI_VIDEO_HPP
+#endif  // !RPI_VIDEO_HPP

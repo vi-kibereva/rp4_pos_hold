@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
 
             aux3_active = current_aux3_state;
 
-            double yaw = drone->getGyroData().yaw - start_yaw - CV_PI / 2;
+            double yaw = drone->getGyroData().yaw - start_yaw + CV_PI / 2;
             double cy = std::cos(yaw);
             double sy = std::sin(yaw);
 
@@ -234,7 +234,6 @@ int main(int argc, char* argv[]) {
     try {
         msp::SetRawRcData neutral(1500, 1500, 1500, 1500);
         msp->setRawRc(neutral);
-        std::this_thread::sleep_for(100ms);  // Ensure command is sent
     } catch (const std::exception& ex) {
         std::cerr << "[WARNING] Could not send shutdown commands: " << ex.what() << std::endl;
     }
