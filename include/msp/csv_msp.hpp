@@ -3,6 +3,7 @@
 
 #include <termios.h>
 
+#include <algorithm>
 #include <chrono>
 #include <stdexcept>  // Added for std::runtime_error
 #include <vector>
