@@ -1,18 +1,24 @@
 #include "msp/csv_msp.hpp"
 
 #include <chrono>
+#include <fstream>
+#include <sstream>
+#include <iostream>
 
 namespace msp {
 
-explicit CsvMsp(std::string altitude_path, std::string attitude_path, std::string raw_imu_path) {
+CsvMsp::CsvMsp(std::string altitude_path, std::string attitude_path, std::string raw_imu_path)
+    : altitude_path_(altitude_path),
+      attitude_path_(attitude_path),
+      raw_imu_path_(raw_imu_path) {
     load_attitude();
     load_altitude();
-    auto start = std::chrono::steady_clock::now();
+    start = std::chrono::steady_clock::now();
 }
 
 void CsvMsp::load_attitude() {
-    std::ifstream file(attitude_path);
-    if (!file.is_open()) throw std::runtime_error("Cannot open attitude CSV: " + path);
+    std::ifstream file(attitude_path_);
+    if (!file.is_open()) throw std::runtime_error("Cannot open attitude CSV: " + attitude_path_);
 
     std::string line;
     std::getline(file, line);
@@ -39,12 +45,12 @@ StatusData CsvMsp::status() {
 }
 
 RcData CsvMsp::rc() {
-    throw std::runtime_error("Can't get rc data in CsvMsp")
+    throw std::runtime_error("Can't get rc data in CsvMsp");
 }
 
 void CsvMsp::load_altitude() {
-    std::ifstream file(altitude_path);
-    if (!file.is_open()) throw std::runtime_error("Cannot open altitude CSV: " + path);
+    std::ifstream file(altitude_path_);
+    if (!file.is_open()) throw std::runtime_error("Cannot open altitude CSV: " + altitude_path_);
 
     std::string line;
     std::getline(file, line);
@@ -64,11 +70,51 @@ void CsvMsp::load_altitude() {
     std::cout << "[INFO] Loaded " << altitude_data.size() << " altitude records" << std::endl;
 }
 
-AttitudeData attitude() {
-    intertpolateAttitude();
+AttitudeData CsvMsp::attitude() {
+    auto now = std::chrono::steady_clock::now();
+    double elapsed = std::chrono::duration<double>(now - start).count();
+    AttitudeRecord record = interpolateAttitude(elapsed);
+
+    // Convert from degrees to tenths of degrees
+    int16_t roll_tenths = static_cast<int16_t>(record.roll * 10);
+    int16_t pitch_tenths = static_cast<int16_t>(record.pitch * 10);
+    int16_t yaw_tenths = static_cast<int16_t>(record.yaw * 10);
+
+    // Create payload in little-endian format
+    uint8_t payload[6];
+    payload[0] = roll_tenths & 0xFF;
+    payload[1] = (roll_tenths >> 8) & 0xFF;
+    payload[2] = pitch_tenths & 0xFF;
+    payload[3] = (pitch_tenths >> 8) & 0xFF;
+    payload[4] = yaw_tenths & 0xFF;
+    payload[5] = (yaw_tenths >> 8) & 0xFF;
+
+    return AttitudeData(6, payload);
 }
+
+AltitudeData CsvMsp::altitude() {
+    auto now = std::chrono::steady_clock::now();
+    double elapsed = std::chrono::duration<double>(now - start).count();
+    AltitudeRecord record = interpolateAltitude(elapsed);
+
+    // Convert to int32_t (altitude in cm) and int16_t (vario in cm/s)
+    int32_t altitude_cm = static_cast<int32_t>(record.altitude);
+    int16_t vario_cm_s = static_cast<int16_t>(record.vario);
+
+    // Create payload in little-endian format
+    uint8_t payload[6];
+    payload[0] = altitude_cm & 0xFF;
+    payload[1] = (altitude_cm >> 8) & 0xFF;
+    payload[2] = (altitude_cm >> 16) & 0xFF;
+    payload[3] = (altitude_cm >> 24) & 0xFF;
+    payload[4] = vario_cm_s & 0xFF;
+    payload[5] = (vario_cm_s >> 8) & 0xFF;
+
+    return AltitudeData(6, payload);
+}
+
 RawImuData CsvMsp::rawImu() {
-    throw std::runtime_error("Can't read rawImu")
+    throw std::runtime_error("Can't read rawImu");
 }
 
 void CsvMsp::setRawRc(const SetRawRcData& data) {

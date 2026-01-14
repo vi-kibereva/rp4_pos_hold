@@ -136,17 +136,18 @@ class CsvMsp : public contracts::IMsp {
 
    private:
     std::chrono::steady_clock::time_point start;
-    std::vector<AltitudeData> altitude_data;
+    std::vector<AltitudeRecord> altitude_data;
+    std::vector<AttitudeRecord> attitude_data;
 
-    std::vector<AttitudeData> attitude_data;
-    BitaflughtMsp bitaflught_msp_;
+    std::string altitude_path_;
+    std::string attitude_path_;
+    std::string raw_imu_path_;
 
     AltitudeRecord interpolateAltitude(double timestamp) const;
+    AttitudeRecord interpolateAttitude(double timestamp) const;
 
     void load_altitude();
-
     void load_attitude();
-    AttitudeRecord interpolateAttitude(double timestamp) const;
 };
 
 }  // namespace msp

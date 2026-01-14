@@ -20,37 +20,37 @@ class IMsp {
      * @brief Request flight controller status information.
      * @return StatusData on success.
      */
-    [[nodiscard]] virtual StatusData status() = 0;
+    [[nodiscard]] virtual msp::StatusData status() = 0;
 
     /**
      * @brief Request RC channel values from the flight controller.
      * @return RcData on success.
      */
-    [[nodiscard]] virtual RcData rc() = 0;
+    [[nodiscard]] virtual msp::RcData rc() = 0;
 
     /**
      * @brief Request altitude and vertical velocity from the flight controller.
      * @return AltitudeData on success.
      */
-    [[nodiscard]] virtual AltitudeData altitude() = 0;
+    [[nodiscard]] virtual msp::AltitudeData altitude() = 0;
 
     /**
      * @brief Request attitude (Roll, Pitch, Yaw) from the flight controller.
      * @return AttitudeData on success.
      */
-    [[nodiscard]] virtual AttitudeData attitude() = 0;
+    [[nodiscard]] virtual msp::AttitudeData attitude() = 0;
 
     /**
      * @brief Request raw IMU sensor data from the flight controller.
      * @return RawImuData on success.
      */
-    [[nodiscard]] virtual RawImuData rawImu() = 0;
+    [[nodiscard]] virtual msp::RawImuData rawImu() = 0;
 
     /**
      * @brief Send RC channel values to the flight controller.
      * @param data SetRawRcData containing channel count and channel values.
      */
-    virtual void setRawRc(const SetRawRcData& data) = 0;
+    virtual void setRawRc(const msp::SetRawRcData& data) = 0;
 };
 
 }  // namespace contracts

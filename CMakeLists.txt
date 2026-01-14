@@ -84,7 +84,10 @@ add_executable(
   rp4_analyzer
   ${CMAKE_SOURCE_DIR}/src/analyze_main.cpp
   ${CMAKE_SOURCE_DIR}/src/pid/pid.cpp
-  ${CMAKE_SOURCE_DIR}/src/posHold/OfflineDroneAdapter.cpp
+  ${CMAKE_SOURCE_DIR}/src/msp/csv_msp.cpp
+  ${CMAKE_SOURCE_DIR}/src/msp/bitaflught_msp.cpp
+  ${CMAKE_SOURCE_DIR}/src/msp/msp.cpp
+  ${CMAKE_SOURCE_DIR}/src/msp/serial_stream.cpp
 )
 
 target_include_directories(rp4_analyzer PRIVATE

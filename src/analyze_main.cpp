@@ -1,28 +1,15 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <vector>
 #include <string>
 #include <iomanip>
 #include <algorithm>
 #include <stdexcept>
 #include <cmath>
+#include "msp/csv_msp.hpp"
 
 cv::Mat grayFrame;
-
-struct AltitudeRecord {
-    double timestamp;
-    double altitude;
-    double vario;
-};
-
-struct AttitudeRecord {
-    double timestamp;
-    double roll;
-    double pitch;
-    double yaw;
-};
 
 struct CameraInfo {
     CameraInfo(double fov, int resX, int resY, double minD, double maxD, int f) :
@@ -43,10 +30,7 @@ struct GyroData {
     double roll, pitch, yaw;
 };
 
-
 #include "pid/pid.hpp"
-
-class CsvDataLoader;
 
 class DroneAdapter {
 public:
@@ -55,7 +39,7 @@ public:
         1920, 1080, 0.01, 1000.0, 15
     );
 
-    CsvDataLoader* csv_loader;
+    msp::CsvMsp* csv_msp;
     cv::Mat current_frame;
     cv::Mat current_gray;
     double current_timestamp = 0.0;
@@ -65,90 +49,6 @@ public:
     GyroData getGyroData();
     double getAltitude();
 };
-
-class CsvDataLoader {
-public:
-    std::vector<AltitudeRecord> altitude_data;
-    std::vector<AttitudeRecord> attitude_data;
-
-    void loadAltitude(const std::string& path) {
-        std::ifstream file(path);
-        if (!file.is_open()) throw std::runtime_error("Cannot open altitude CSV: " + path);
-
-        std::string line;
-        std::getline(file, line);
-
-        while (std::getline(file, line)) {
-            std::stringstream ss(line);
-            std::string token;
-            AltitudeRecord record;
-            std::getline(ss, token, ','); record.timestamp = std::stod(token);
-            std::getline(ss, token, ','); record.altitude = std::stod(token);
-            std::getline(ss, token, ','); record.vario = std::stod(token);
-            altitude_data.push_back(record);
-        }
-        std::cout << "[INFO] Loaded " << altitude_data.size() << " altitude records" << std::endl;
-    }
-
-    void loadAttitude(const std::string& path) {
-        std::ifstream file(path);
-        if (!file.is_open()) throw std::runtime_error("Cannot open attitude CSV: " + path);
-
-        std::string line;
-        std::getline(file, line);
-
-        while (std::getline(file, line)) {
-            std::stringstream ss(line);
-            std::string token;
-            AttitudeRecord record;
-            std::getline(ss, token, ','); record.timestamp = std::stod(token);
-            std::getline(ss, token, ','); record.roll = std::stod(token);
-            std::getline(ss, token, ','); record.pitch = std::stod(token);
-            std::getline(ss, token, ','); record.yaw = std::stod(token);
-            attitude_data.push_back(record);
-        }
-        std::cout << "[INFO] Loaded " << attitude_data.size() << " attitude records" << std::endl;
-    }
-
-    AltitudeRecord interpolateAltitude(double timestamp) const {
-        if (altitude_data.empty()) throw std::runtime_error("No altitude data");
-        if (timestamp <= altitude_data.front().timestamp) return altitude_data.front();
-        if (timestamp >= altitude_data.back().timestamp) return altitude_data.back();
-
-        auto upper = std::upper_bound(altitude_data.begin(), altitude_data.end(), timestamp,
-            [](double t, const AltitudeRecord& r) { return t < r.timestamp; });
-        auto lower = upper - 1;
-
-        double alpha = (timestamp - lower->timestamp) / (upper->timestamp - lower->timestamp);
-        return {timestamp,
-                lower->altitude + alpha * (upper->altitude - lower->altitude),
-                lower->vario + alpha * (upper->vario - lower->vario)};
-    }
-
-    AttitudeRecord interpolateAttitude(double timestamp) const {
-        if (attitude_data.empty()) throw std::runtime_error("No attitude data");
-        if (timestamp <= attitude_data.front().timestamp) return attitude_data.front();
-        if (timestamp >= attitude_data.back().timestamp) return attitude_data.back();
-
-        auto upper = std::upper_bound(attitude_data.begin(), attitude_data.end(), timestamp,
-            [](double t, const AttitudeRecord& r) { return t < r.timestamp; });
-        auto lower = upper - 1;
-
-        double alpha = (timestamp - lower->timestamp) / (upper->timestamp - lower->timestamp);
-        return {timestamp,
-                lower->roll + alpha * (upper->roll - lower->roll),
-                lower->pitch + alpha * (upper->pitch - lower->pitch),
-                lower->yaw + alpha * (upper->yaw - lower->yaw)};
-    }
-};
-
-AltitudeRecord interpolateAltitude(CsvDataLoader* loader, double timestamp) {
-    return loader->interpolateAltitude(timestamp);
-}
-
-AttitudeRecord interpolateAttitude(CsvDataLoader* loader, double timestamp) {
-    return loader->interpolateAttitude(timestamp);
-}
 
 void DroneAdapter::setFrame(const cv::Mat& frame, double timestamp) {
     current_frame = frame.clone();
@@ -164,12 +64,18 @@ cv::Mat DroneAdapter::getGrayscaleImage() {
 }
 
 GyroData DroneAdapter::getGyroData() {
-    AttitudeRecord att = csv_loader->interpolateAttitude(current_timestamp);
-    return {att.roll * CV_PI / 180.0, att.pitch * CV_PI / 180.0, att.yaw * CV_PI / 180.0};
+    msp::AttitudeData att = csv_msp->attitude();
+    // Convert from tenths of degrees to radians
+    return {
+        (att.roll_tenths / 10.0) * CV_PI / 180.0,
+        (att.pitch_tenths / 10.0) * CV_PI / 180.0,
+        (att.yaw_tenths / 10.0) * CV_PI / 180.0
+    };
 }
 
 double DroneAdapter::getAltitude() {
-    return csv_loader->interpolateAltitude(current_timestamp).altitude / 100.0;  // cm to m
+    msp::AltitudeData alt = csv_msp->altitude();
+    return alt.altitude / 100.0;  // cm to m
 }
 
 
@@ -341,10 +247,12 @@ int main(int argc, char* argv[]) {
     std::cout << "[INIT] CSV directory: " << csv_dir << std::endl;
 
     try {
-        std::cout << "\n[LOAD] Loading CSV data..." << std::endl;
-        CsvDataLoader csv_loader;
-        csv_loader.loadAltitude(csv_dir + "/altitude_data.csv");
-        csv_loader.loadAttitude(csv_dir + "/attitude_data.csv");
+        std::cout << "\n[LOAD] Initializing CsvMsp..." << std::endl;
+        msp::CsvMsp csv_msp(
+            csv_dir + "/altitude_data.csv",
+            csv_dir + "/attitude_data.csv",
+            csv_dir + "/raw_imu_data.csv"
+        );
 
         std::cout << "\n[VIDEO] Opening video file..." << std::endl;
         cv::VideoCapture video(video_path);
@@ -360,7 +268,7 @@ int main(int argc, char* argv[]) {
 
         std::cout << "\n[INIT] Initializing optical flow (FOV=37.4°)..." << std::endl;
         DroneAdapter drone;
-        drone.csv_loader = &csv_loader;
+        drone.csv_msp = &csv_msp;
         VecMove vec_move(drone);
 
         cv::Point2f cumulative_position(0.0f, 0.0f);

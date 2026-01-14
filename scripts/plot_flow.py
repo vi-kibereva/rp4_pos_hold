@@ -29,10 +29,10 @@ def plot_flow_trajectory(csv_path):
         return
 
     # Check for PID control columns
-    has_pid = 'roll_cmd' in df.columns and 'pitch_cmd' in df.columns
+    has_pid = "roll_cmd" in df.columns and "pitch_cmd" in df.columns
 
     # Validate columns
-    required_cols = ['timestamp', 'x_change', 'y_change']
+    required_cols = ["timestamp", "x_change", "y_change"]
     if not all(col in df.columns for col in required_cols):
         print(f"Error: CSV must contain columns: {required_cols}")
         print(f"Found columns: {list(df.columns)}")
@@ -43,94 +43,143 @@ def plot_flow_trajectory(csv_path):
         print(f"Found PID control data - will visualize control vectors")
 
     # Compute cumulative position
-    x_cumulative = np.cumsum(df['x_change'].values)
-    y_cumulative = np.cumsum(df['y_change'].values)
+    x_cumulative = np.cumsum(df["x_change"].values)
+    y_cumulative = np.cumsum(df["y_change"].values)
 
     # Create figure with two subplots
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 8))
 
     # Subplot 1: Trajectory with optional PID control vectors
-    ax1.plot(x_cumulative, y_cumulative, 'b-', linewidth=1.5, alpha=0.6, label='Flight path')
-    ax1.plot(x_cumulative[0], y_cumulative[0], 'go', markersize=12, label='Start', zorder=10)
-    ax1.plot(x_cumulative[-1], y_cumulative[-1], 'ro', markersize=12, label='End', zorder=10)
+    ax1.plot(
+        x_cumulative, y_cumulative, "b-", linewidth=1.5, alpha=0.6, label="Flight path"
+    )
+    ax1.plot(
+        x_cumulative[0], y_cumulative[0], "go", markersize=12, label="Start", zorder=10
+    )
+    ax1.plot(
+        x_cumulative[-1], y_cumulative[-1], "ro", markersize=12, label="End", zorder=10
+    )
 
     # Draw PID control vectors if available
     if has_pid:
         # Convert RC commands to normalized control (-1 to +1)
         # RC: 1500=neutral, 1000=-max, 2000=+max
-        roll_norm = (df['roll_cmd'].values - 1500) / 500.0   # X control
-        pitch_norm = (df['pitch_cmd'].values - 1500) / 500.0  # Y control
+        roll_norm = (df["roll_cmd"].values - 1500) / 500.0  # X control
+        pitch_norm = (df["pitch_cmd"].values - 1500) / 500.0  # Y control
 
         # Scale for visualization (arrows proportional to command strength)
-        arrow_scale = 20.0  # cm, adjust for visibility
+        arrow_scale = -200.0  # cm, adjust for visibility
 
         # Draw control vectors every 50 points
         for i in range(0, len(x_cumulative), 50):
             ax1.arrow(
-                x_cumulative[i], y_cumulative[i],
-                roll_norm[i] * arrow_scale,      # dx (roll controls X)
-                pitch_norm[i] * arrow_scale,     # dy (pitch controls Y)
-                head_width=5, head_length=3,
-                fc='red', ec='red', alpha=0.7,
+                x_cumulative[i],
+                y_cumulative[i],
+                roll_norm[i] * arrow_scale,  # dx (roll controls X)
+                pitch_norm[i] * arrow_scale,  # dy (pitch controls Y)
+                head_width=5,
+                head_length=3,
+                fc="red",
+                ec="red",
+                alpha=0.7,
                 length_includes_head=True,
-                zorder=8
+                zorder=8,
             )
 
-        title_text = 'Trajectory with PID Control Vectors\n(Red arrows = RC commands every 50 frames, FOV=37.4°)'
+        title_text = "Trajectory with PID Control Vectors\n(Red arrows = RC commands every 50 frames, FOV=37.4°)"
     else:
         # Mark every 30th point for time reference (legacy behavior)
         marker_interval = 30
-        ax1.scatter(x_cumulative[::marker_interval],
-                   y_cumulative[::marker_interval],
-                   c='gray',
-                   s=20,
-                   alpha=0.5,
-                   zorder=5)
-        title_text = 'Optical Flow Trajectory\n(Rotation Compensated, Altitude Scaled, FOV=37.4°)'
+        ax1.scatter(
+            x_cumulative[::marker_interval],
+            y_cumulative[::marker_interval],
+            c="gray",
+            s=20,
+            alpha=0.5,
+            zorder=5,
+        )
+        title_text = "Optical Flow Trajectory\n(Rotation Compensated, Altitude Scaled, FOV=37.4°)"
 
-    ax1.set_xlabel('X Position (cm)', fontsize=12)
-    ax1.set_ylabel('Y Position (cm)', fontsize=12)
+    ax1.set_xlabel("X Position (cm)", fontsize=12)
+    ax1.set_ylabel("Y Position (cm)", fontsize=12)
     ax1.set_title(title_text, fontsize=13)
     ax1.legend(fontsize=10)
     ax1.grid(True, alpha=0.3)
-    ax1.axis('equal')
+    ax1.axis("equal")
 
     # Subplot 2: PID commands or velocity components
     if has_pid:
         # Plot RC commands over time
-        ax2.plot(df['timestamp'], df['roll_cmd'], 'r-', label='Roll CMD', alpha=0.7, linewidth=1)
-        ax2.plot(df['timestamp'], df['pitch_cmd'], 'b-', label='Pitch CMD', alpha=0.7, linewidth=1)
-        ax2.axhline(y=1500, color='k', linestyle='--', alpha=0.3, linewidth=2, label='Neutral (1500)')
-        ax2.axhline(y=1000, color='gray', linestyle=':', alpha=0.2, linewidth=1)
-        ax2.axhline(y=2000, color='gray', linestyle=':', alpha=0.2, linewidth=1)
-        ax2.set_xlabel('Time (s)', fontsize=12)
-        ax2.set_ylabel('RC PWM Value', fontsize=12)
+        ax2.plot(
+            df["timestamp"],
+            df["roll_cmd"],
+            "r-",
+            label="Roll CMD",
+            alpha=0.7,
+            linewidth=1,
+        )
+        ax2.plot(
+            df["timestamp"],
+            df["pitch_cmd"],
+            "b-",
+            label="Pitch CMD",
+            alpha=0.7,
+            linewidth=1,
+        )
+        ax2.axhline(
+            y=1500,
+            color="k",
+            linestyle="--",
+            alpha=0.3,
+            linewidth=2,
+            label="Neutral (1500)",
+        )
+        ax2.axhline(y=1000, color="gray", linestyle=":", alpha=0.2, linewidth=1)
+        ax2.axhline(y=2000, color="gray", linestyle=":", alpha=0.2, linewidth=1)
+        ax2.set_xlabel("Time (s)", fontsize=12)
+        ax2.set_ylabel("RC PWM Value", fontsize=12)
         ax2.set_ylim(900, 2100)
-        ax2.set_title('PID Control Commands Over Time', fontsize=13)
+        ax2.set_title("PID Control Commands Over Time", fontsize=13)
         ax2.legend(fontsize=10)
         ax2.grid(True, alpha=0.3)
     else:
         # Plot velocity components (legacy behavior)
-        ax2.plot(df['timestamp'], df['x_change'], 'r-', label='X Velocity', alpha=0.7, linewidth=1)
-        ax2.plot(df['timestamp'], df['y_change'], 'b-', label='Y Velocity', alpha=0.7, linewidth=1)
-        ax2.axhline(y=0, color='k', linestyle='--', alpha=0.3)
-        ax2.set_xlabel('Time (s)', fontsize=12)
-        ax2.set_ylabel('Velocity (cm/frame)', fontsize=12)
-        ax2.set_title('Velocity Components Over Time', fontsize=13)
+        ax2.plot(
+            df["timestamp"],
+            df["x_change"],
+            "r-",
+            label="X Velocity",
+            alpha=0.7,
+            linewidth=1,
+        )
+        ax2.plot(
+            df["timestamp"],
+            df["y_change"],
+            "b-",
+            label="Y Velocity",
+            alpha=0.7,
+            linewidth=1,
+        )
+        ax2.axhline(y=0, color="k", linestyle="--", alpha=0.3)
+        ax2.set_xlabel("Time (s)", fontsize=12)
+        ax2.set_ylabel("Velocity (cm/frame)", fontsize=12)
+        ax2.set_title("Velocity Components Over Time", fontsize=13)
         ax2.legend(fontsize=10)
         ax2.grid(True, alpha=0.3)
 
     plt.tight_layout()
 
     # Save figure
-    output_filename = 'flow_trajectory_with_pid.png' if has_pid else 'flow_trajectory.png'
+    output_filename = (
+        "flow_trajectory_with_pid.png" if has_pid else "flow_trajectory.png"
+    )
     output_path = Path(csv_path).parent / output_filename
-    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    plt.savefig(output_path, dpi=150, bbox_inches="tight")
     print(f"\nPlot saved to: {output_path}")
 
     # Print statistics
-    total_distance = np.sum(np.sqrt(df['x_change']**2 + df['y_change']**2))
-    final_displacement = np.sqrt(x_cumulative[-1]**2 + y_cumulative[-1]**2)
+    total_distance = np.sum(np.sqrt(df["x_change"] ** 2 + df["y_change"] ** 2))
+    final_displacement = np.sqrt(x_cumulative[-1] ** 2 + y_cumulative[-1] ** 2)
 
     print(f"\nTrajectory Statistics:")
     print(f"  Total path length: {total_distance:.2f} cm")
@@ -146,7 +195,7 @@ def main():
         csv_path = sys.argv[1]
     else:
         # Default to ~/Downloads/down2/flow_data.csv
-        csv_path = Path.home() / 'Downloads' / 'down2' / 'flow_data.csv'
+        csv_path = Path.home() / "Downloads" / "down2" / "flow_data.csv"
 
     print(f"Reading flow data from: {csv_path}")
     plot_flow_trajectory(str(csv_path))
