@@ -1,13 +1,13 @@
-#include <opencv2/opencv.hpp>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <string>
-#include <iomanip>
 #include <algorithm>
-#include <stdexcept>
 #include <cmath>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <opencv2/opencv.hpp>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 cv::Mat grayFrame;
 
@@ -25,10 +25,14 @@ struct AttitudeRecord {
 };
 
 struct CameraInfo {
-    CameraInfo(double fov, int resX, int resY, double minD, double maxD, int f) :
-        fov{fov}, resolutionX{resX}, resolutionY{resY},
-        minDist{minD}, maxDist{maxD}, fps{f},
-        focalLength{resX / (std::tan(fov / 2) * 2)} {}
+    CameraInfo(double fov, int resX, int resY, double minD, double maxD, int f)
+        : fov{fov},
+          resolutionX{resX},
+          resolutionY{resY},
+          minDist{minD},
+          maxDist{maxD},
+          fps{f},
+          focalLength{resX / (std::tan(fov / 2) * 2)} {}
 
     const double fov;
     const int resolutionX;
@@ -43,17 +47,14 @@ struct GyroData {
     double roll, pitch, yaw;
 };
 
-
 #include "pid/pid.hpp"
 
 class CsvDataLoader;
 
 class DroneAdapter {
-public:
-    const CameraInfo cameraInfo = CameraInfo(
-        37.4 * CV_PI / 180,  // 37.4 deg FOV
-        1920, 1080, 0.01, 1000.0, 15
-    );
+   public:
+    const CameraInfo cameraInfo = CameraInfo(37.4 * CV_PI / 180,  // 37.4 deg FOV
+                                             1920, 1080, 0.01, 1000.0, 15);
 
     CsvDataLoader* csv_loader;
     cv::Mat current_frame;
@@ -67,7 +68,7 @@ public:
 };
 
 class CsvDataLoader {
-public:
+   public:
     std::vector<AltitudeRecord> altitude_data;
     std::vector<AttitudeRecord> attitude_data;
 
@@ -82,9 +83,12 @@ public:
             std::stringstream ss(line);
             std::string token;
             AltitudeRecord record;
-            std::getline(ss, token, ','); record.timestamp = std::stod(token);
-            std::getline(ss, token, ','); record.altitude = std::stod(token);
-            std::getline(ss, token, ','); record.vario = std::stod(token);
+            std::getline(ss, token, ',');
+            record.timestamp = std::stod(token);
+            std::getline(ss, token, ',');
+            record.altitude = std::stod(token);
+            std::getline(ss, token, ',');
+            record.vario = std::stod(token);
             altitude_data.push_back(record);
         }
         std::cout << "[INFO] Loaded " << altitude_data.size() << " altitude records" << std::endl;
@@ -101,10 +105,14 @@ public:
             std::stringstream ss(line);
             std::string token;
             AttitudeRecord record;
-            std::getline(ss, token, ','); record.timestamp = std::stod(token);
-            std::getline(ss, token, ','); record.roll = std::stod(token);
-            std::getline(ss, token, ','); record.pitch = std::stod(token);
-            std::getline(ss, token, ','); record.yaw = std::stod(token);
+            std::getline(ss, token, ',');
+            record.timestamp = std::stod(token);
+            std::getline(ss, token, ',');
+            record.roll = std::stod(token);
+            std::getline(ss, token, ',');
+            record.pitch = std::stod(token);
+            std::getline(ss, token, ',');
+            record.yaw = std::stod(token);
             attitude_data.push_back(record);
         }
         std::cout << "[INFO] Loaded " << attitude_data.size() << " attitude records" << std::endl;
@@ -115,13 +123,13 @@ public:
         if (timestamp <= altitude_data.front().timestamp) return altitude_data.front();
         if (timestamp >= altitude_data.back().timestamp) return altitude_data.back();
 
-        auto upper = std::upper_bound(altitude_data.begin(), altitude_data.end(), timestamp,
-            [](double t, const AltitudeRecord& r) { return t < r.timestamp; });
+        auto upper =
+            std::upper_bound(altitude_data.begin(), altitude_data.end(), timestamp,
+                             [](double t, const AltitudeRecord& r) { return t < r.timestamp; });
         auto lower = upper - 1;
 
         double alpha = (timestamp - lower->timestamp) / (upper->timestamp - lower->timestamp);
-        return {timestamp,
-                lower->altitude + alpha * (upper->altitude - lower->altitude),
+        return {timestamp, lower->altitude + alpha * (upper->altitude - lower->altitude),
                 lower->vario + alpha * (upper->vario - lower->vario)};
     }
 
@@ -130,13 +138,13 @@ public:
         if (timestamp <= attitude_data.front().timestamp) return attitude_data.front();
         if (timestamp >= attitude_data.back().timestamp) return attitude_data.back();
 
-        auto upper = std::upper_bound(attitude_data.begin(), attitude_data.end(), timestamp,
-            [](double t, const AttitudeRecord& r) { return t < r.timestamp; });
+        auto upper =
+            std::upper_bound(attitude_data.begin(), attitude_data.end(), timestamp,
+                             [](double t, const AttitudeRecord& r) { return t < r.timestamp; });
         auto lower = upper - 1;
 
         double alpha = (timestamp - lower->timestamp) / (upper->timestamp - lower->timestamp);
-        return {timestamp,
-                lower->roll + alpha * (upper->roll - lower->roll),
+        return {timestamp, lower->roll + alpha * (upper->roll - lower->roll),
                 lower->pitch + alpha * (upper->pitch - lower->pitch),
                 lower->yaw + alpha * (upper->yaw - lower->yaw)};
     }
@@ -172,9 +180,8 @@ double DroneAdapter::getAltitude() {
     return csv_loader->interpolateAltitude(current_timestamp).altitude / 100.0;  // cm to m
 }
 
-
 class OpticalFlow {
-public:
+   public:
     DroneAdapter* drone;
     cv::Mat prevFrame;
     std::vector<cv::Point2f> prevPoints;
@@ -195,7 +202,10 @@ public:
         if (prevFrame.empty()) {
             prevFrame = grayFrame.clone();
             cv::goodFeaturesToTrack(grayFrame(roi), prevPoints, 200, 0.01, 5);
-            for (auto &p : prevPoints) { p.x += roi.x; p.y += roi.y; }
+            for (auto& p : prevPoints) {
+                p.x += roi.x;
+                p.y += roi.y;
+            }
             opticalFlow = cv::Point2f(0, 0);
             return;
         }
@@ -203,7 +213,10 @@ public:
         if (prevPoints.size() < 50) {
             std::vector<cv::Point2f> newPoints;
             cv::goodFeaturesToTrack(grayFrame(roi), newPoints, 200, 0.01, 5);
-            for (auto &p : newPoints) { p.x += roi.x; p.y += roi.y; }
+            for (auto& p : newPoints) {
+                p.x += roi.x;
+                p.y += roi.y;
+            }
             prevPoints.insert(prevPoints.end(), newPoints.begin(), newPoints.end());
         }
 
@@ -234,11 +247,13 @@ public:
         prevPoints = goodNext;
     }
 
-    cv::Point2f getOpticalFlow() const { return opticalFlow; }
+    cv::Point2f getOpticalFlow() const {
+        return opticalFlow;
+    }
 };
 
 class VecDown {
-public:
+   public:
     DroneAdapter* drone;
     cv::Point2f vecDown;
     cv::Point2f vecDownDisplacement;
@@ -268,10 +283,8 @@ public:
         float u = drone->cameraInfo.resolutionX / 2.0 + x_screen;
         float v_scr = drone->cameraInfo.resolutionY / 2.0 + y_screen;
 
-        return {
-            std::max(std::min(u, (float)drone->cameraInfo.resolutionX), 0.0f),
-            std::max(std::min(v_scr, (float)drone->cameraInfo.resolutionY), 0.0f)
-        };
+        return {std::max(std::min(u, (float)drone->cameraInfo.resolutionX), 0.0f),
+                std::max(std::min(v_scr, (float)drone->cameraInfo.resolutionY), 0.0f)};
     }
 
     void calc() {
@@ -284,12 +297,16 @@ public:
         vecDown = newVecDown;
     }
 
-    cv::Point2f getVecDown() const { return vecDown; }
-    cv::Point2f getVecDownDisplacement() const { return vecDownDisplacement; }
+    cv::Point2f getVecDown() const {
+        return vecDown;
+    }
+    cv::Point2f getVecDownDisplacement() const {
+        return vecDownDisplacement;
+    }
 };
 
 class VecMove {
-public:
+   public:
     DroneAdapter* drone;
     VecDown vecDown;
     OpticalFlow opticalFlow;
@@ -304,8 +321,8 @@ public:
         cv::Point2f p = vecDown.getVecDown();
         opticalFlow.calc((int)p.x, (int)p.y, accountFlowPixels);
 
-        if (p.x < 0 || p.x >= drone->cameraInfo.resolutionX ||
-            p.y < 0 || p.y >= drone->cameraInfo.resolutionY) {
+        if (p.x < 0 || p.x >= drone->cameraInfo.resolutionX || p.y < 0 ||
+            p.y >= drone->cameraInfo.resolutionY) {
             vecMove = p / std::sqrt(drone->cameraInfo.resolutionX * drone->cameraInfo.resolutionX +
                                     drone->cameraInfo.resolutionY * drone->cameraInfo.resolutionY);
             return;
@@ -316,7 +333,9 @@ public:
                   (vecDown.getVecDownDisplacement() * vecDownDisplacementCoef - meanOpticalFlow);
     }
 
-    cv::Point2f getVecMove() const { return vecMove; }
+    cv::Point2f getVecMove() const {
+        return vecMove;
+    }
 };
 
 std::string expandTilde(const std::string& path) {
@@ -353,8 +372,8 @@ int main(int argc, char* argv[]) {
         double fps = video.get(cv::CAP_PROP_FPS);
         int total_frames = (int)video.get(cv::CAP_PROP_FRAME_COUNT);
 
-        std::cout << "[VIDEO] Resolution: " << (int)video.get(cv::CAP_PROP_FRAME_WIDTH)
-                  << "x" << (int)video.get(cv::CAP_PROP_FRAME_HEIGHT) << std::endl;
+        std::cout << "[VIDEO] Resolution: " << (int)video.get(cv::CAP_PROP_FRAME_WIDTH) << "x"
+                  << (int)video.get(cv::CAP_PROP_FRAME_HEIGHT) << std::endl;
         std::cout << "[VIDEO] FPS: " << fps << std::endl;
         std::cout << "[VIDEO] Total frames: " << total_frames << std::endl;
 
@@ -372,7 +391,8 @@ int main(int argc, char* argv[]) {
         std::ofstream flow_csv(output_path);
         if (!flow_csv.is_open()) throw std::runtime_error("Cannot create: " + output_path);
 
-        flow_csv << "timestamp,x_change,y_change,roll_cmd,pitch_cmd\n" << std::fixed << std::setprecision(6);
+        flow_csv << "timestamp,x_change,y_change,roll_cmd,pitch_cmd\n"
+                 << std::fixed << std::setprecision(6);
         std::cout << "[OUTPUT] Writing to: " << output_path << std::endl;
 
         std::cout << "\n[PROCESS] Processing frames...\n" << std::endl;
@@ -403,15 +423,12 @@ int main(int argc, char* argv[]) {
             uint16_t roll_cmd = static_cast<uint16_t>(rc_values[0]);
             uint16_t pitch_cmd = static_cast<uint16_t>(rc_values[1]);
 
-            flow_csv << timestamp << ","
-                     << x_cm << ","
-                     << y_cm << ","
-                     << roll_cmd << ","
+            flow_csv << timestamp << "," << x_cm << "," << y_cm << "," << roll_cmd << ","
                      << pitch_cmd << "\n";
 
             if (frame_idx % 30 == 0 || frame_idx == total_frames - 1) {
-                std::cout << "\r[PROGRESS] Frame " << frame_idx << "/" << total_frames
-                          << " (" << (100 * frame_idx / total_frames) << "%)   " << std::flush;
+                std::cout << "\r[PROGRESS] Frame " << frame_idx << "/" << total_frames << " ("
+                          << (100 * frame_idx / total_frames) << "%)   " << std::flush;
             }
             frame_idx++;
         }

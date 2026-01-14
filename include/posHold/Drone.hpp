@@ -52,7 +52,7 @@ class Drone {
 
    private:
     contracts::IMsp* m_msp;
-    contracts::IVideo m_camera;
+    contracts::IVideo& m_camera;
 };
 
 #endif
