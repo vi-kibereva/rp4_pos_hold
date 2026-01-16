@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
 #include <opencv2/opencv.hpp>
 
 #include "contracts/IMsp.hpp"
@@ -49,7 +50,7 @@ public:
 
 private:
   contracts::IMsp *m_msp;
-  contracts::IVideo &m_camera;
+  std::unique_ptr<contracts::IVideo> *m_camera;
 };
 
 #endif
