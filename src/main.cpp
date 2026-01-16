@@ -69,7 +69,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  std::unique_ptr<contracts::IVideo> camera = std::make_unique(1080, 1920, 10);
+  std::unique_ptr<contracts::IVideo> camera =
+      std::make_unique<contracts::IVideo>(1080, 1920, 10);
   Drone *drone = nullptr;
   try {
     std::cout << "[INIT] Starting camera and sensors..." << std::endl;

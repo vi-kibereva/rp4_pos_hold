@@ -1,7 +1,8 @@
 #include "posHold/Drone.hpp"
+#include <memory>
 
 Drone::Drone(contracts::IMsp &msp, contracts::IVideo &video)
-    : m_msp{&msp}, &m_camera(&video) {
+    : m_msp{&msp}, m_camera(&video) {
   m_camera.start_camera();
 }
 
