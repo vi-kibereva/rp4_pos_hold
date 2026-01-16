@@ -50,7 +50,7 @@ public:
 
 private:
   contracts::IMsp *m_msp;
-  std::unique_ptr<contracts::IVideo> *m_camera;
+  contracts::IVideo *m_camera;
 };
 
 #endif

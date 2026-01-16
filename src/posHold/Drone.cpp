@@ -2,11 +2,11 @@
 
 Drone::Drone(contracts::IMsp &msp, contracts::IVideo &video)
     : m_msp{&msp}, m_camera{&video} {
-  m_camera.start_camera();
+  m_camera->start_camera();
 }
 
 [[nodiscard]] cv::Mat Drone::getGrayscaleImage() {
-  cv::Mat frame = m_camera.get_frame();
+  cv::Mat frame = m_camera->get_frame();
   cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
   return frame;
 }
@@ -26,4 +26,4 @@ Drone::Drone(contracts::IMsp &msp, contracts::IVideo &video)
   return m_msp->altitude().altitude / 100.0;
 }
 
-Drone::~Drone() { m_camera.stop_camera(); }
+Drone::~Drone() { m_camera->stop_camera(); }

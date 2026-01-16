@@ -14,6 +14,7 @@
 #include "pid/pid.hpp"
 #include "posHold/Drone.hpp"
 #include "posHold/VecMove.hpp"
+#include "video/RpiVideo.hpp"
 
 using namespace std::chrono_literals;
 
@@ -70,7 +71,7 @@ int main(int argc, char *argv[]) {
   }
 
   std::unique_ptr<contracts::IVideo> camera =
-      std::make_unique<contracts::IVideo>(1080, 1920, 10);
+      std::make_unique<video::RpiVideo>(1080, 1920, 10);
   Drone *drone = nullptr;
   try {
     std::cout << "[INIT] Starting camera and sensors..." << std::endl;
